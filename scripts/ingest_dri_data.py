@@ -2,10 +2,14 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, abs as spark_abs
 
 def main():
+    # Injecting the fix directly into the SparkSession to override image defaults
     spark = SparkSession.builder \
         .appName("DRI-Ingestion") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+        .config("spark.hadoop.fs.s3a.connection.timeout", "200000") \
+        .config("spark.hadoop.fs.s3a.connection.establish.timeout", "30000") \
+        .config("spark.hadoop.fs.s3a.threads.keepalivetime", "60") \
         .getOrCreate()
 
     jdbc_url = "jdbc:sqlserver://172.30.1.42:1433;databaseName=ANRML_01-12-2025_AH;encrypt=true;trustServerCertificate=true"

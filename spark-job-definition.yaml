@@ -11,13 +11,11 @@ spec:
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
 
-  # Keep for backup, but the sparkConf below is the primary fix
-  sparkConfigMap: "spark-config" 
-
+  # The primary mechanism for configuration in Spark 4.0
   sparkConf:
-    # --- 1. CRITICAL HADOOP FIXES (Plain integers to avoid NumberFormatException) ---
+    # --- 1. CRITICAL HADOOP FIXES (Strictly integers, no "s" suffixes) ---
     "spark.hadoop.fs.s3a.threads.keepalivetime": "60"
-    "spark.hadoop.fs.s3a.connection.timeout": "20000"
+    "spark.hadoop.fs.s3a.connection.timeout": "200000"
     "spark.hadoop.fs.s3a.connection.establish.timeout": "30000"
     "spark.hadoop.fs.s3a.connection.acquisition.timeout": "60000"
     "spark.hadoop.fs.s3a.connection.idle.time": "60000"
@@ -46,7 +44,7 @@ spec:
     "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
     "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
 
-    # --- 5. PVC MOUNTS (Scripts) ---
+    # --- 5. PVC MOUNTS (Script Location) ---
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
@@ -58,14 +56,10 @@ spec:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # FORCE SPARK TO IGNORE BROKEN XML FILES IN THE IMAGE
     env:
+      # This forces Delta Lake/Hadoop to ignore image-level XML files
       - name: HADOOP_CONF_DIR
         value: "/tmp" 
-    volumeMounts:
-      - name: spark-defaults-vol
-        mountPath: /opt/spark/conf/spark.properties
-        subPath: spark-defaults.conf
   
   executor:
     cores: 2
@@ -74,15 +68,8 @@ spec:
     env:
       - name: HADOOP_CONF_DIR
         value: "/tmp"
-    volumeMounts:
-      - name: spark-defaults-vol
-        mountPath: /opt/spark/conf/spark.properties
-        subPath: spark-defaults.conf
 
   volumes:
-    - name: spark-defaults-vol
-      configMap:
-        name: spark-config
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
