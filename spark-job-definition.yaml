@@ -10,16 +10,16 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
-
-  # This environment variable tells Spark exactly where to look for the defaults file
-  sparkConfigMap: "spark-config" 
   
+  # Inject the ConfigMap globally for both Driver and Executor
+  sparkConfigMap: "spark-config" 
+
   sparkConf:
-    # This environment variable is the "proper" way to point to the conf directory
+    # Explicitly set the conf directory environment variables
     "spark.kubernetes.driverEnv.SPARK_CONF_DIR": "/opt/spark/conf"
     "spark.executorEnv.SPARK_CONF_DIR": "/opt/spark/conf"
     
-    # Keep your volume bypass for the Python script
+    # PVC configuration for your scripts
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
@@ -32,20 +32,22 @@ spec:
     memory: "1g"
     serviceAccount: spark-operator-spark
     volumeMounts:
-      - name: spark-defaults
-        mountPath: /opt/spark/conf/spark-defaults.conf
+      - name: spark-defaults-vol
+        # MOUNT AS spark.properties TO SATISFY YOUR IMAGE ENTRYPOINT
+        mountPath: /opt/spark/conf/spark.properties
         subPath: spark-defaults.conf
+  
   executor:
     cores: 2
     instances: 1
     memory: "4g"
     volumeMounts:
-      - name: spark-defaults
-        mountPath: /opt/spark/conf/spark-defaults.conf
+      - name: spark-defaults-vol
+        mountPath: /opt/spark/conf/spark.properties
         subPath: spark-defaults.conf
 
   volumes:
-    - name: spark-defaults
+    - name: spark-defaults-vol
       configMap:
         name: spark-config
     - name: dags-shared
