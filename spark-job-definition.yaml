@@ -9,42 +9,29 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # THE FIX: Point to a flat directory we control
-  mainApplicationFile: "local:///opt/spark/work-dir/ingest_dri_data.py"
+  # FIX: Use the full path from the root of the mount
+  mainApplicationFile: "local:///mnt/data/dags-v5/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # This block forces root to be able to read the 50000 files
-    podSecurityContext:
-      fsGroup: 50000
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/work-dir
-        # We use the subPath to jump straight past the symlink 'repo'
-        # Git-sync structure is dags-v5/..data/scripts/
-        # But we use the symlink-resolved path for stability
-        subPath: dags-v5/repo/scripts
+        mountPath: /mnt/data  # Mount the WHOLE PVC here
+        readOnly: true
         
   executor:
     cores: 2
     instances: 1
     memory: "4g"
-    podSecurityContext:
-      fsGroup: 50000
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/work-dir
-        subPath: dags-v5/repo/scripts
+        mountPath: /mnt/data
+        readOnly: true
 
   volumes:
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
-        readOnly: true
