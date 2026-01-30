@@ -9,8 +9,8 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # THE FIX: Absolute path starting from the mount point, no subpaths used in volumes
-  mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
+  # This matches the physical path in your ls output
+  mainApplicationFile: "local:///opt/spark/work-dir/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
@@ -21,8 +21,8 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/airflow/dags # Mount the root of the PVC
-        # subPath is REMOVED to allow symlink resolution
+        mountPath: /opt/spark/work-dir
+        # We mount the root of the PVC so the 'repo' folder is visible
         
   executor:
     cores: 2
@@ -32,7 +32,7 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/airflow/dags
+        mountPath: /opt/spark/work-dir
 
   volumes:
     - name: dags-shared
