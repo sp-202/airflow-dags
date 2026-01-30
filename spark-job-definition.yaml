@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingest-bypass-{{ ts_nodash | lower }}"
+  name: "dri-ingest-v2-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
@@ -9,28 +9,28 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # This stays the same
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
-  # NEW: We define the volumes here to bypass the failing Webhook
   sparkConf:
+    # Volume Bypass (Bypassing broken Webhook)
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
-    "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.readOnly": "false"
     "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
-    "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.readOnly": "false"
 
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # Keep nodeSelector if you want to stay on that specific node
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
         
   executor:
     cores: 2
@@ -38,9 +38,15 @@ spec:
     memory: "4g"
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
 
-  # We keep these here as a backup, but the sparkConf above is what will actually do the work
   volumes:
+    - name: spark-defaults
+      configMap:
+        name: spark-config
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
