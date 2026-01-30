@@ -9,38 +9,51 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
+  # Path inside the PVC where git-sync stores the script
   mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
-  # Inject the ConfigMap as environment variables for S3 Keys
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
+    # Ensure the driver runs on the same node as the local PVC
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
     envFrom:
       - configMapRef:
           name: global-config
-    # MOUNTING THE CONFIG FILE
     volumeMounts:
       - name: spark-defaults
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
+      - name: dags-shared
+        mountPath: /opt/airflow/dags
         
   executor:
     cores: 2
     instances: 1
     memory: "4g"
+    # Ensure executors also land on the same node for local-path storage
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
     envFrom:
       - configMapRef:
           name: global-config
-    # MOUNTING THE CONFIG FILE
     volumeMounts:
       - name: spark-defaults
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
+      - name: dags-shared
+        mountPath: /opt/airflow/dags
 
-  # Define the Volume from your existing Kustomize-generated ConfigMap
   volumes:
+    # 1. Your existing config for spark settings
     - name: spark-defaults
       configMap:
         name: spark-config
+    # 2. The new PVC that contains your synced Git dags/scripts
+    - name: dags-shared
+      persistentVolumeClaim:
+        claimName: airflow-dags-pvc
+        readOnly: true
