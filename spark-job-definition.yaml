@@ -1,57 +1,35 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingestion-{{ ts_nodash | lower }}"
+  name: "debug-ls-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
-  pythonVersion: "3"
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
-  imagePullPolicy: IfNotPresent 
-  # We use the full path. Since repo is a symlink, we use the direct path 
-  # that worked in your checker pod.
-  mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
+  # We bypass Python and run ls directly to see the directory content
+  mainApplicationFile: "local:///bin/ls" 
+  arguments: 
+    - "-laR"
+    - "/opt/airflow/dags"
   sparkVersion: "4.0.1"
-  
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # Force the pod to wait a second for the ConfigMap to be ready
-    coreLimit: "1200m" 
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
-    envFrom:
-      - configMapRef:
-          name: global-config
     volumeMounts:
-      - name: spark-defaults
-        mountPath: /opt/spark/conf/spark-defaults.conf
-        subPath: spark-defaults.conf
-      - name: dags-shared
-        mountPath: /opt/airflow/dags # Mount the root of the PVC here
-        
-  executor:
-    cores: 2
-    instances: 1
-    memory: "4g"
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
-    envFrom:
-      - configMapRef:
-          name: global-config
-    volumeMounts:
-      - name: spark-defaults
-        mountPath: /opt/spark/conf/spark-defaults.conf
-        subPath: spark-defaults.conf
       - name: dags-shared
         mountPath: /opt/airflow/dags
-
+  executor:
+    cores: 1
+    instances: 1
+    memory: "1g"
+    volumeMounts:
+      - name: dags-shared
+        mountPath: /opt/airflow/dags
   volumes:
-    - name: spark-defaults
-      configMap:
-        name: spark-config
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
