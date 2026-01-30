@@ -4,7 +4,8 @@ from datetime import datetime
 import os
 
 # Get the directory where THIS dag file is located
-DAG_PATH = os.path.dirname(os.path.realpath(__file__))
+# Force the path to the stable symlink repo path
+REPO_PATH = "/opt/airflow/dags/dags-v5/repo"
 
 with DAG(
     dag_id="spark_dri_ingestion",
@@ -16,7 +17,7 @@ with DAG(
     submit_spark_job = SparkKubernetesOperator(
         task_id="submit_ingestion_job",
         namespace="default",
-        # We point to the YAML file synced by git-sync
-        application_file=os.path.join(DAG_PATH, "spark-job-definition.yaml"),
+        # Use the explicit path here
+        application_file=os.path.join(REPO_PATH, "spark-job-definition.yaml"),
         do_xcom_push=True
     )
