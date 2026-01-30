@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingestion-{{ ts_nodash | lower }}"
+  name: "dri-ingest-final-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
@@ -9,8 +9,8 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # We use local:// to keep the Operator happy, but point to our mount point
-  mainApplicationFile: "local:///opt/spark/scripts/ingest_dri_data.py"
+  # Using a direct path that matches our mount exactly
+  mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
@@ -19,8 +19,9 @@ spec:
     serviceAccount: spark-operator-spark
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/scripts
-        # We mount the "scripts" folder from the PVC directly to /opt/spark/scripts
+        mountPath: /app
+        # This maps the 'scripts' folder directly to '/app'
+        # So /data/repo/scripts/ingest_dri_data.py becomes /app/ingest_dri_data.py
         subPath: repo/scripts
         
   executor:
@@ -29,7 +30,7 @@ spec:
     memory: "4g"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/scripts
+        mountPath: /app
         subPath: repo/scripts
 
   volumes:
