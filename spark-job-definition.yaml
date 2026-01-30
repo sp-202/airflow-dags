@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingest-v3-{{ ts_nodash | lower }}"
+  name: "dri-ingest-final-fix"
   namespace: default
 spec:
   type: Python
@@ -11,13 +11,15 @@ spec:
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
 
-  # FORCE SPARK TO READ YOUR MOUNTED CONFIG
-  arguments:
-    - "--properties-file"
-    - "/opt/spark/conf/spark-defaults.conf"
+  # This environment variable tells Spark exactly where to look for the defaults file
+  sparkConfigMap: "spark-config" 
   
   sparkConf:
-    # Keep the bypass for volumes
+    # This environment variable is the "proper" way to point to the conf directory
+    "spark.kubernetes.driverEnv.SPARK_CONF_DIR": "/opt/spark/conf"
+    "spark.executorEnv.SPARK_CONF_DIR": "/opt/spark/conf"
+    
+    # Keep your volume bypass for the Python script
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
