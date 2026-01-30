@@ -9,15 +9,14 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # Path inside the PVC where git-sync stores the script
-  mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
+  # Use a flat path since we are using subPath in the mount
+  mainApplicationFile: "local:///opt/spark/work-dir/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # Ensure the driver runs on the same node as the local PVC
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     envFrom:
@@ -28,13 +27,13 @@ spec:
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
       - name: dags-shared
-        mountPath: /opt/airflow/dags
+        mountPath: /opt/spark/work-dir
+        subPath: dags-v5/repo/scripts # Direct link to the scripts folder
         
   executor:
     cores: 2
     instances: 1
     memory: "4g"
-    # Ensure executors also land on the same node for local-path storage
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     envFrom:
@@ -45,14 +44,13 @@ spec:
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
       - name: dags-shared
-        mountPath: /opt/airflow/dags
+        mountPath: /opt/spark/work-dir
+        subPath: dags-v5/repo/scripts
 
   volumes:
-    # 1. Your existing config for spark settings
     - name: spark-defaults
       configMap:
         name: spark-config
-    # 2. The new PVC that contains your synced Git dags/scripts
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
