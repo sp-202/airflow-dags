@@ -1,0 +1,46 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: SparkApplication
+metadata:
+  name: dri-ingestion-{{ ds_nodash }}
+  namespace: default
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
+  imagePullPolicy: IfNotPresent 
+  mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
+  sparkVersion: "4.0.1"
+  
+  # Inject the ConfigMap as environment variables for S3 Keys
+  driver:
+    cores: 1
+    memory: "1g"
+    serviceAccount: spark-operator-spark
+    envFrom:
+      - configMapRef:
+          name: global-config
+    # MOUNTING THE CONFIG FILE
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
+        
+  executor:
+    cores: 2
+    instances: 1
+    memory: "4g"
+    envFrom:
+      - configMapRef:
+          name: global-config
+    # MOUNTING THE CONFIG FILE
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
+
+  # Define the Volume from your existing Kustomize-generated ConfigMap
+  volumes:
+    - name: spark-defaults
+      configMap:
+        name: spark-config
