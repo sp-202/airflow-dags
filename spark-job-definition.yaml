@@ -1,19 +1,23 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingest-v2-{{ ts_nodash | lower }}"
+  name: "dri-ingest-v3-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
   pythonVersion: "3"
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
-  imagePullPolicy: IfNotPresent 
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
+
+  # FORCE SPARK TO READ YOUR MOUNTED CONFIG
+  arguments:
+    - "--properties-file"
+    - "/opt/spark/conf/spark-defaults.conf"
   
   sparkConf:
-    # Volume Bypass (Bypassing broken Webhook)
+    # Keep the bypass for volumes
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
     "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
@@ -25,19 +29,14 @@ spec:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: spark-defaults
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
-        
   executor:
     cores: 2
     instances: 1
     memory: "4g"
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: spark-defaults
         mountPath: /opt/spark/conf/spark-defaults.conf
