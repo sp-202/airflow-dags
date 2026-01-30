@@ -9,21 +9,20 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # Path is now very short
-  mainApplicationFile: "local:///repo/scripts/ingest_dri_data.py"
+  # REMOVED local:// prefix. This forces Python to look directly at the disk.
+  mainApplicationFile: "/opt/spark/work-dir/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
+    # Node selector is redundant on a single-node setup but kept for safety
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /repo
-        # We mount ONLY the 'repo' folder from the PVC to /repo in the pod
-        subPath: repo
+        mountPath: /opt/spark/work-dir
         
   executor:
     cores: 2
@@ -33,11 +32,11 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /repo
-        subPath: repo
+        mountPath: /opt/spark/work-dir
 
   volumes:
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
-        readOnly: true
+        # Set to false temporarily just to rule out any 'root-cannot-read-readonly-mount' edge cases
+        readOnly: false
