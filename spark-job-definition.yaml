@@ -9,8 +9,8 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # Using /tmp to ensure the OS can always resolve the mount point
-  mainApplicationFile: "local:///tmp/repo/scripts/ingest_dri_data.py"
+  # Path is now very short
+  mainApplicationFile: "local:///repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
@@ -21,9 +21,9 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /tmp
-        # We mount the PVC to /tmp. 
-        # Since BusyBox saw 'repo' in the PVC, it will be at /tmp/repo
+        mountPath: /repo
+        # We mount ONLY the 'repo' folder from the PVC to /repo in the pod
+        subPath: repo
         
   executor:
     cores: 2
@@ -33,7 +33,8 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /tmp
+        mountPath: /repo
+        subPath: repo
 
   volumes:
     - name: dags-shared
