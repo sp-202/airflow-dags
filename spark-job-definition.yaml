@@ -9,8 +9,8 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # WE POINT TO THE ACTUAL SYMLINK PATH IN THE MOUNT
-  mainApplicationFile: "local:///mnt/scripts/repo/scripts/ingest_dri_data.py"
+  # THE FIX: Absolute path starting from the mount point, no subpaths used in volumes
+  mainApplicationFile: "local:///opt/airflow/dags/dags-v5/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
@@ -21,10 +21,8 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /mnt/scripts
-        # FIX: We mount the stable parent directory. 
-        # We do NOT use 'repo' in the subPath.
-        subPath: dags-v5
+        mountPath: /opt/airflow/dags # Mount the root of the PVC
+        # subPath is REMOVED to allow symlink resolution
         
   executor:
     cores: 2
@@ -34,8 +32,7 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /mnt/scripts
-        subPath: dags-v5
+        mountPath: /opt/airflow/dags
 
   volumes:
     - name: dags-shared
