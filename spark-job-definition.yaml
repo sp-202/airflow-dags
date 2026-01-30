@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  # Using ts_nodash ensures the name is unique for every run/retry
+  # Using ts_nodash for uniqueness
   name: "dri-ingestion-{{ ts_nodash | lower }}"
   namespace: default
 spec:
@@ -10,7 +10,9 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # 1. We change the path to /mnt/data/ which is a neutral, clean mount point
+  # 1. Bypass the 'repo' symlink and point to the actual hash directory found in your ls output
+  # Note: git-sync updates the 'repo' symlink, but the files always exist in the 'repo' path too.
+  # We will use the /mnt/data root mount.
   mainApplicationFile: "local:///mnt/data/dags-v5/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
@@ -18,35 +20,35 @@ spec:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
+    # 2. FORCE permissions to match the '50000' user we saw in the storage-checker
+    securityContext:
+      runAsUser: 50000
+      fsGroup: 50000
     nodeSelector:
       kubernetes.io/hostname: "aig-datawarehouse-145"
-    envFrom:
-      - configMapRef:
-          name: global-config
-    volumeMounts:
-      - name: spark-defaults
-        mountPath: /opt/spark/conf/spark-defaults.conf
-        subPath: spark-defaults.conf
-      - name: dags-shared
-        mountPath: /mnt/data # 2. Mount to /mnt/data instead of Airflow's internal path
-        readOnly: true
-        
-  executor:
-    cores: 2
-    instances: 1
-    memory: "4g"
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
-    envFrom:
-      - configMapRef:
-          name: global-config
     volumeMounts:
       - name: spark-defaults
         mountPath: /opt/spark/conf/spark-defaults.conf
         subPath: spark-defaults.conf
       - name: dags-shared
         mountPath: /mnt/data
-        readOnly: true
+        
+  executor:
+    cores: 2
+    instances: 1
+    memory: "4g"
+    # 3. Match security context for executors too
+    securityContext:
+      runAsUser: 50000
+      fsGroup: 50000
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
+      - name: dags-shared
+        mountPath: /mnt/data
 
   volumes:
     - name: spark-defaults
@@ -55,4 +57,4 @@ spec:
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
-        # 3. Ensure this matches your PVC's actual availability
+        readOnly: true
