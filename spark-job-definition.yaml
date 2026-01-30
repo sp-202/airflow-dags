@@ -9,7 +9,7 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # This matches the physical path in your ls output
+  # This path is now 100% stable because /repo is a real directory
   mainApplicationFile: "local:///opt/spark/work-dir/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
@@ -22,7 +22,7 @@ spec:
     volumeMounts:
       - name: dags-shared
         mountPath: /opt/spark/work-dir
-        # We mount the root of the PVC so the 'repo' folder is visible
+        # Mounts the root of the PVC so /opt/spark/work-dir/repo exists
         
   executor:
     cores: 2
