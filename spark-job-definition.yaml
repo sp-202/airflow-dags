@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "dri-ingest-final-{{ ts_nodash | lower }}"
+  name: "dri-ingest-bypass-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
@@ -9,30 +9,37 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # Using a direct path that matches our mount exactly
+  # This stays the same
   mainApplicationFile: "local:///app/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
+  # NEW: We define the volumes here to bypass the failing Webhook
+  sparkConf:
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
+    "spark.kubernetes.driver.volumes.persistentVolumeClaim.dags-shared.mount.readOnly": "false"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.options.claimName": "airflow-dags-pvc"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.path": "/app"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.subPath": "repo/scripts"
+    "spark.kubernetes.executor.volumes.persistentVolumeClaim.dags-shared.mount.readOnly": "false"
+
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    volumeMounts:
-      - name: dags-shared
-        mountPath: /app
-        # This maps the 'scripts' folder directly to '/app'
-        # So /data/repo/scripts/ingest_dri_data.py becomes /app/ingest_dri_data.py
-        subPath: repo/scripts
+    # Keep nodeSelector if you want to stay on that specific node
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
         
   executor:
     cores: 2
     instances: 1
     memory: "4g"
-    volumeMounts:
-      - name: dags-shared
-        mountPath: /app
-        subPath: repo/scripts
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
 
+  # We keep these here as a backup, but the sparkConf above is what will actually do the work
   volumes:
     - name: dags-shared
       persistentVolumeClaim:
