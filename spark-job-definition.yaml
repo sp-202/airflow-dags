@@ -9,34 +9,30 @@ spec:
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: IfNotPresent 
-  # REMOVED local:// prefix. This forces Python to look directly at the disk.
-  mainApplicationFile: "/opt/spark/work-dir/repo/scripts/ingest_dri_data.py"
+  # We use local:// to keep the Operator happy, but point to our mount point
+  mainApplicationFile: "local:///opt/spark/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   
   driver:
     cores: 1
     memory: "1g"
     serviceAccount: spark-operator-spark
-    # Node selector is redundant on a single-node setup but kept for safety
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/work-dir
+        mountPath: /opt/spark/scripts
+        # We mount the "scripts" folder from the PVC directly to /opt/spark/scripts
+        subPath: repo/scripts
         
   executor:
     cores: 2
     instances: 1
     memory: "4g"
-    nodeSelector:
-      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/spark/work-dir
+        mountPath: /opt/spark/scripts
+        subPath: repo/scripts
 
   volumes:
     - name: dags-shared
       persistentVolumeClaim:
         claimName: airflow-dags-pvc
-        # Set to false temporarily just to rule out any 'root-cannot-read-readonly-mount' edge cases
-        readOnly: false
