@@ -1,18 +1,18 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: SparkApplication
 metadata:
-  name: "debug-ls-{{ ts_nodash | lower }}"
+  name: "dri-ingestion-{{ ts_nodash | lower }}"
   namespace: default
 spec:
   type: Python
+  pythonVersion: "3"
   mode: cluster
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
-  # We bypass Python and run ls directly to see the directory content
-  mainApplicationFile: "local:///bin/ls" 
-  arguments: 
-    - "-laR"
-    - "/opt/airflow/dags"
+  imagePullPolicy: IfNotPresent 
+  # THE FIX: Pointing to where the file ACTUALLY is inside the container
+  mainApplicationFile: "local:///mnt/data/dags-v5/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
+  
   driver:
     cores: 1
     memory: "1g"
@@ -21,14 +21,18 @@ spec:
       kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/airflow/dags
+        mountPath: /mnt/data  # This MUST match the path in the mainApplicationFile
+        
   executor:
-    cores: 1
+    cores: 2
     instances: 1
-    memory: "1g"
+    memory: "4g"
+    nodeSelector:
+      kubernetes.io/hostname: "aig-datawarehouse-145"
     volumeMounts:
       - name: dags-shared
-        mountPath: /opt/airflow/dags
+        mountPath: /mnt/data
+
   volumes:
     - name: dags-shared
       persistentVolumeClaim:
