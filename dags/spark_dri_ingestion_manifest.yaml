@@ -6,8 +6,8 @@ metadata:
 spec:
   type: "Python"
   mode: "cluster"
-  image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
-  imagePullPolicy: "IfNotPresent"
+  image: "subhodeep2022/spark-bigdata:spark-4.0.1-v6-proper-way"
+  imagePullPolicy: "Always"
   mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
