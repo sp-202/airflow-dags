@@ -1,0 +1,287 @@
+++ id -u
++ myuid=0
+++ id -g
++ mygid=0
++ set +e
+++ getent passwd 0
++ uidentry=root:x:0:0:root:/root:/bin/bash
++ set -e
++ '[' -z root:x:0:0:root:/root:/bin/bash ']'
++ '[' -z /opt/java/openjdk ']'
++ SPARK_CLASSPATH=':/opt/spark/jars/*'
++ env
++ grep SPARK_JAVA_OPT_
++ sort -t_ -k4 -n
++ sed 's/[^=]*=\(.*\)/\1/g'
+++ command -v readarray
++ '[' readarray ']'
++ readarray -t SPARK_EXECUTOR_JAVA_OPTS
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z ']'
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z x ']'
++ SPARK_CLASSPATH='/etc/spark/conf::/opt/spark/jars/*'
++ SPARK_CLASSPATH='/etc/spark/conf::/opt/spark/jars/*:/opt/spark'
++ case "$1" in
++ shift 1
++ CMD=("$SPARK_HOME/bin/spark-submit" --conf "spark.driver.bindAddress=$SPARK_DRIVER_BIND_ADDRESS" --conf "spark.executorEnv.SPARK_DRIVER_POD_IP=$SPARK_DRIVER_BIND_ADDRESS" --deploy-mode client "$@")
++ exec /usr/bin/tini -s -- /opt/spark/bin/spark-submit --conf spark.driver.bindAddress=10.42.0.122 --conf spark.executorEnv.SPARK_DRIVER_POD_IP=10.42.0.122 --deploy-mode client --properties-file /opt/spark/conf/spark.properties --class org.apache.spark.deploy.PythonRunner local:///opt/spark/repo/repo/scripts/ingest_dri_data.py
+WARNING: Using incubator modules: jdk.incubator.vector
+26/01/31 06:58:16 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/01/31 06:58:17 INFO SparkContext: Running Spark version 4.0.1
+26/01/31 06:58:17 INFO SparkContext: OS info Linux, 6.12.63+deb13-cloud-amd64, amd64
+26/01/31 06:58:17 INFO SparkContext: Java version 17.0.17
+26/01/31 06:58:17 INFO ResourceUtils: ==============================================================
+26/01/31 06:58:17 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/01/31 06:58:17 INFO ResourceUtils: ==============================================================
+26/01/31 06:58:17 INFO SparkContext: Submitted application: RandomDeltaGen
+26/01/31 06:58:17 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 12000, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/01/31 06:58:17 INFO ResourceProfile: Limiting resource is cpus at 1 tasks per executor
+26/01/31 06:58:17 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/01/31 06:58:17 INFO SecurityManager: Changing view acls to: root
+26/01/31 06:58:17 INFO SecurityManager: Changing modify acls to: root
+26/01/31 06:58:17 INFO SecurityManager: Changing view acls groups to: root
+26/01/31 06:58:17 INFO SecurityManager: Changing modify acls groups to: root
+26/01/31 06:58:17 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: root groups with view permissions: EMPTY; users with modify permissions: root; groups with modify permissions: EMPTY; RPC SSL disabled
+26/01/31 06:58:18 INFO Utils: Successfully started service 'sparkDriver' on port 7078.
+26/01/31 06:58:18 INFO SparkEnv: Registering MapOutputTracker
+26/01/31 06:58:18 INFO SparkEnv: Registering BlockManagerMaster
+26/01/31 06:58:18 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/01/31 06:58:18 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/01/31 06:58:18 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/01/31 06:58:18 INFO DiskBlockManager: Created local directory at /var/data/spark-1c3c900d-193c-4df2-b052-b028740ed143/blockmgr-16238fc9-5d7a-494b-ae4e-87925cc6fe12
+26/01/31 06:58:18 INFO SparkEnv: Registering OutputCommitCoordinator
+26/01/31 06:58:18 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/01/31 06:58:18 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/01/31 06:58:18 INFO SecurityManager: Changing view acls to: root
+26/01/31 06:58:18 INFO SecurityManager: Changing modify acls to: root
+26/01/31 06:58:18 INFO SecurityManager: Changing view acls groups to: root
+26/01/31 06:58:18 INFO SecurityManager: Changing modify acls groups to: root
+26/01/31 06:58:18 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: root groups with view permissions: EMPTY; users with modify permissions: root; groups with modify permissions: EMPTY; RPC SSL disabled
+26/01/31 06:58:18 INFO SparkKubernetesClientFactory: Auto-configuring K8S client using current context from users K8S config file
+26/01/31 06:58:21 INFO ExecutorPodsAllocator: Going to request 1 executors from Kubernetes for ResourceProfile Id: 0, target: 1, known: 0, sharedSlotFromPendingPods: 2147483647.
+26/01/31 06:58:22 INFO ExecutorPodsAllocator: Found 0 reusable PVCs from 0 PVCs
+26/01/31 06:58:22 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 7079.
+26/01/31 06:58:22 INFO NettyBlockTransferService: Server created on spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc 10.42.0.122:7079
+26/01/31 06:58:22 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/01/31 06:58:22 INFO BasicExecutorFeatureStep: Decommissioning not enabled, skipping shutdown script
+26/01/31 06:58:22 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc, 7079, None)
+26/01/31 06:58:22 INFO BlockManagerMasterEndpoint: Registering block manager spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc:7079 with 1048.8 MiB RAM, BlockManagerId(driver, spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc, 7079, None)
+26/01/31 06:58:22 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc, 7079, None)
+26/01/31 06:58:22 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc, 7079, None)
+26/01/31 06:58:25 INFO KubernetesClusterSchedulerBackend$KubernetesDriverEndpoint: Registered executor NettyRpcEndpointRef(spark-client://Executor) (10.42.0.123:40880) with ID 1, ResourceProfileId 0
+26/01/31 06:58:25 INFO KubernetesClusterSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.8
+26/01/31 06:58:26 INFO BlockManagerMasterEndpoint: Registering block manager 10.42.0.123:37141 with 6.9 GiB RAM, BlockManagerId(1, 10.42.0.123, 37141, None)
+Generating 10 million rows of random data...
+26/01/31 06:58:29 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+26/01/31 06:58:29 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+26/01/31 06:58:29 INFO MetricsSystemImpl: Scheduled Metric snapshot period at 10 second(s).
+26/01/31 06:58:29 INFO MetricsSystemImpl: s3a-file-system metrics system started
+26/01/31 06:58:29 INFO MetricsSystemImpl: Stopping s3a-file-system metrics system...
+26/01/31 06:58:29 INFO MetricsSystemImpl: s3a-file-system metrics system stopped.
+26/01/31 06:58:29 INFO MetricsSystemImpl: s3a-file-system metrics system shutdown complete.
+26/01/31 06:58:29 WARN FileSystem: Failed to initialize filesystem s3a://test-bucket/warehouse: java.io.IOException: Class class software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider does not implement AWSCredentialsProvider
+26/01/31 06:58:29 WARN SharedState: Cannot qualify the warehouse path, leaving it unqualified.
+java.io.IOException: Class class software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider does not implement AWSCredentialsProvider
+	at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProvider(S3AUtils.java:733)
+	at org.apache.hadoop.fs.s3a.S3AUtils.buildAWSProviderList(S3AUtils.java:698)
+	at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProviderSet(S3AUtils.java:631)
+	at org.apache.hadoop.fs.s3a.S3AFileSystem.bindAWSClient(S3AFileSystem.java:877)
+	at org.apache.hadoop.fs.s3a.S3AFileSystem.initialize(S3AFileSystem.java:534)
+	at org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:3615)
+	at org.apache.hadoop.fs.FileSystem.access$300(FileSystem.java:172)
+	at org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:3716)
+	at org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:3667)
+	at org.apache.hadoop.fs.FileSystem.get(FileSystem.java:557)
+	at org.apache.hadoop.fs.Path.getFileSystem(Path.java:366)
+	at org.apache.spark.sql.internal.SharedState$.qualifyWarehousePath(SharedState.scala:294)
+	at org.apache.spark.sql.internal.SharedState.liftedTree1$1(SharedState.scala:81)
+	at org.apache.spark.sql.internal.SharedState.<init>(SharedState.scala:80)
+	at org.apache.spark.sql.classic.SparkSession.$anonfun$sharedState$1(SparkSession.scala:175)
+	at scala.Option.getOrElse(Option.scala:201)
+	at org.apache.spark.sql.classic.SparkSession.sharedState$lzycompute(SparkSession.scala:175)
+	at org.apache.spark.sql.classic.SparkSession.sharedState(SparkSession.scala:174)
+	at org.apache.spark.sql.classic.SparkSession.$anonfun$sessionState$2(SparkSession.scala:186)
+	at scala.Option.getOrElse(Option.scala:201)
+	at org.apache.spark.sql.classic.SparkSession.sessionState$lzycompute(SparkSession.scala:184)
+	at org.apache.spark.sql.classic.SparkSession.sessionState(SparkSession.scala:181)
+	at org.apache.spark.sql.classic.Dataset.<init>(Dataset.scala:262)
+	at org.apache.spark.sql.classic.Dataset.<init>(Dataset.scala:266)
+	at org.apache.spark.sql.classic.SparkSession.range(SparkSession.scala:393)
+	at org.apache.spark.sql.classic.SparkSession.range(SparkSession.scala:91)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)
+	at py4j.Gateway.invoke(Gateway.java:282)
+	at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+	at py4j.commands.CallCommand.execute(CallCommand.java:79)
+	at py4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:184)
+	at py4j.ClientServerConnection.run(ClientServerConnection.java:108)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+Writing data to s3a://test-bucket/random_data in Delta format...
+26/01/31 06:58:32 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+26/01/31 06:58:32 INFO MetricsSystemImpl: Scheduled Metric snapshot period at 10 second(s).
+26/01/31 06:58:32 INFO MetricsSystemImpl: s3a-file-system metrics system started
+26/01/31 06:58:32 INFO MetricsSystemImpl: Stopping s3a-file-system metrics system...
+26/01/31 06:58:32 INFO MetricsSystemImpl: s3a-file-system metrics system stopped.
+26/01/31 06:58:32 INFO MetricsSystemImpl: s3a-file-system metrics system shutdown complete.
+26/01/31 06:58:32 WARN FileSystem: Failed to initialize filesystem s3a://test-bucket/random_data/_delta_log: java.io.IOException: Class class software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider does not implement AWSCredentialsProvider
+Traceback (most recent call last):
+  File "/opt/spark/repo/repo/scripts/ingest_dri_data.py", line 34, in <module>
+    generate_random_data()
+  File "/opt/spark/repo/repo/scripts/ingest_dri_data.py", line 26, in generate_random_data
+    df.write.format("delta").mode("overwrite").save(output_path)
+  File "/opt/spark/python/lib/pyspark.zip/pyspark/sql/readwriter.py", line 1745, in save
+  File "/opt/spark/python/lib/py4j-0.10.9.9-src.zip/py4j/java_gateway.py", line 1362, in __call__
+  File "/opt/spark/python/lib/pyspark.zip/pyspark/errors/exceptions/captured.py", line 282, in deco
+  File "/opt/spark/python/lib/py4j-0.10.9.9-src.zip/py4j/protocol.py", line 327, in get_return_value
+py4j.protocol.Py4JJavaError: An error occurred while calling o79.save.
+: java.io.IOException: Class class software.amazon.awssdk.auth.credentials.EnvironmentVariableCredentialsProvider does not implement AWSCredentialsProvider
+	at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProvider(S3AUtils.java:733)
+	at org.apache.hadoop.fs.s3a.S3AUtils.buildAWSProviderList(S3AUtils.java:698)
+	at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProviderSet(S3AUtils.java:631)
+	at org.apache.hadoop.fs.s3a.S3AFileSystem.bindAWSClient(S3AFileSystem.java:877)
+	at org.apache.hadoop.fs.s3a.S3AFileSystem.initialize(S3AFileSystem.java:534)
+	at org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:3615)
+	at org.apache.hadoop.fs.FileSystem.access$300(FileSystem.java:172)
+	at org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:3716)
+	at org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:3667)
+	at org.apache.hadoop.fs.FileSystem.get(FileSystem.java:557)
+	at org.apache.hadoop.fs.Path.getFileSystem(Path.java:366)
+	at org.apache.spark.sql.delta.DeltaLog$.apply(DeltaLog.scala:966)
+	at org.apache.spark.sql.delta.DeltaLog$.forTable(DeltaLog.scala:801)
+	at org.apache.spark.sql.delta.sources.DeltaDataSource.createRelation(DeltaDataSource.scala:197)
+	at org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand.run(SaveIntoDataSourceCommand.scala:55)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult$lzycompute(commands.scala:79)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult(commands.scala:77)
+	at org.apache.spark.sql.execution.command.ExecutedCommandExec.executeCollect(commands.scala:88)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$2(QueryExecution.scala:155)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$8(SQLExecution.scala:163)
+	at org.apache.spark.sql.execution.SQLExecution$.withSessionTagsApplied(SQLExecution.scala:272)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$7(SQLExecution.scala:125)
+	at org.apache.spark.JobArtifactSet$.withActiveJobArtifactState(JobArtifactSet.scala:94)
+	at org.apache.spark.sql.artifact.ArtifactManager.$anonfun$withResources$1(ArtifactManager.scala:112)
+	at org.apache.spark.sql.artifact.ArtifactManager.withClassLoaderIfNeeded(ArtifactManager.scala:106)
+	at org.apache.spark.sql.artifact.ArtifactManager.withResources(ArtifactManager.scala:111)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$6(SQLExecution.scala:125)
+	at org.apache.spark.sql.execution.SQLExecution$.withSQLConfPropagated(SQLExecution.scala:295)
+	at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$1(SQLExecution.scala:124)
+	at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:804)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId0(SQLExecution.scala:78)
+	at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId(SQLExecution.scala:237)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$1(QueryExecution.scala:155)
+	at org.apache.spark.sql.execution.QueryExecution$.withInternalError(QueryExecution.scala:654)
+	at org.apache.spark.sql.execution.QueryExecution.org$apache$spark$sql$execution$QueryExecution$$eagerlyExecute$1(QueryExecution.scala:154)
+	at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:169)
+	at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:164)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.$anonfun$transformDownWithPruning$1(TreeNode.scala:470)
+	at org.apache.spark.sql.catalyst.trees.CurrentOrigin$.withOrigin(origin.scala:86)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.transformDownWithPruning(TreeNode.scala:470)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.org$apache$spark$sql$catalyst$plans$logical$AnalysisHelper$$super$transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning(AnalysisHelper.scala:360)
+	at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning$(AnalysisHelper.scala:356)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+	at org.apache.spark.sql.catalyst.trees.TreeNode.transformDown(TreeNode.scala:446)
+	at org.apache.spark.sql.execution.QueryExecution.eagerlyExecuteCommands(QueryExecution.scala:164)
+	at org.apache.spark.sql.execution.QueryExecution.$anonfun$lazyCommandExecuted$1(QueryExecution.scala:126)
+	at scala.util.Try$.apply(Try.scala:217)
+	at org.apache.spark.util.Utils$.doTryWithCallerStacktrace(Utils.scala:1378)
+	at org.apache.spark.util.Utils$.getTryWithCallerStacktrace(Utils.scala:1439)
+	at org.apache.spark.util.LazyTry.get(LazyTry.scala:58)
+	at org.apache.spark.sql.execution.QueryExecution.commandExecuted(QueryExecution.scala:131)
+	at org.apache.spark.sql.execution.QueryExecution.assertCommandExecuted(QueryExecution.scala:192)
+	at org.apache.spark.sql.classic.DataFrameWriter.runCommand(DataFrameWriter.scala:622)
+	at org.apache.spark.sql.classic.DataFrameWriter.saveToV1Source(DataFrameWriter.scala:273)
+	at org.apache.spark.sql.classic.DataFrameWriter.saveInternal(DataFrameWriter.scala:182)
+	at org.apache.spark.sql.classic.DataFrameWriter.save(DataFrameWriter.scala:118)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at py4j.reflection.MethodInvoker.invoke(MethodInvoker.java:244)
+	at py4j.reflection.ReflectionEngine.invoke(ReflectionEngine.java:374)
+	at py4j.Gateway.invoke(Gateway.java:282)
+	at py4j.commands.AbstractCommand.invokeMethod(AbstractCommand.java:132)
+	at py4j.commands.CallCommand.execute(CallCommand.java:79)
+	at py4j.ClientServerConnection.waitForCommands(ClientServerConnection.java:184)
+	at py4j.ClientServerConnection.run(ClientServerConnection.java:108)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+	Suppressed: org.apache.spark.util.Utils$OriginalTryStackTraceException: Full stacktrace of original doTryWithCallerStacktrace caller
+		at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProvider(S3AUtils.java:733)
+		at org.apache.hadoop.fs.s3a.S3AUtils.buildAWSProviderList(S3AUtils.java:698)
+		at org.apache.hadoop.fs.s3a.S3AUtils.createAWSCredentialProviderSet(S3AUtils.java:631)
+		at org.apache.hadoop.fs.s3a.S3AFileSystem.bindAWSClient(S3AFileSystem.java:877)
+		at org.apache.hadoop.fs.s3a.S3AFileSystem.initialize(S3AFileSystem.java:534)
+		at org.apache.hadoop.fs.FileSystem.createFileSystem(FileSystem.java:3615)
+		at org.apache.hadoop.fs.FileSystem.access$300(FileSystem.java:172)
+		at org.apache.hadoop.fs.FileSystem$Cache.getInternal(FileSystem.java:3716)
+		at org.apache.hadoop.fs.FileSystem$Cache.get(FileSystem.java:3667)
+		at org.apache.hadoop.fs.FileSystem.get(FileSystem.java:557)
+		at org.apache.hadoop.fs.Path.getFileSystem(Path.java:366)
+		at org.apache.spark.sql.delta.DeltaLog$.apply(DeltaLog.scala:966)
+		at org.apache.spark.sql.delta.DeltaLog$.forTable(DeltaLog.scala:801)
+		at org.apache.spark.sql.delta.sources.DeltaDataSource.createRelation(DeltaDataSource.scala:197)
+		at org.apache.spark.sql.execution.datasources.SaveIntoDataSourceCommand.run(SaveIntoDataSourceCommand.scala:55)
+		at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult$lzycompute(commands.scala:79)
+		at org.apache.spark.sql.execution.command.ExecutedCommandExec.sideEffectResult(commands.scala:77)
+		at org.apache.spark.sql.execution.command.ExecutedCommandExec.executeCollect(commands.scala:88)
+		at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$2(QueryExecution.scala:155)
+		at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$8(SQLExecution.scala:163)
+		at org.apache.spark.sql.execution.SQLExecution$.withSessionTagsApplied(SQLExecution.scala:272)
+		at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$7(SQLExecution.scala:125)
+		at org.apache.spark.JobArtifactSet$.withActiveJobArtifactState(JobArtifactSet.scala:94)
+		at org.apache.spark.sql.artifact.ArtifactManager.$anonfun$withResources$1(ArtifactManager.scala:112)
+		at org.apache.spark.sql.artifact.ArtifactManager.withClassLoaderIfNeeded(ArtifactManager.scala:106)
+		at org.apache.spark.sql.artifact.ArtifactManager.withResources(ArtifactManager.scala:111)
+		at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$6(SQLExecution.scala:125)
+		at org.apache.spark.sql.execution.SQLExecution$.withSQLConfPropagated(SQLExecution.scala:295)
+		at org.apache.spark.sql.execution.SQLExecution$.$anonfun$withNewExecutionId0$1(SQLExecution.scala:124)
+		at org.apache.spark.sql.SparkSession.withActive(SparkSession.scala:804)
+		at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId0(SQLExecution.scala:78)
+		at org.apache.spark.sql.execution.SQLExecution$.withNewExecutionId(SQLExecution.scala:237)
+		at org.apache.spark.sql.execution.QueryExecution.$anonfun$eagerlyExecuteCommands$1(QueryExecution.scala:155)
+		at org.apache.spark.sql.execution.QueryExecution$.withInternalError(QueryExecution.scala:654)
+		at org.apache.spark.sql.execution.QueryExecution.org$apache$spark$sql$execution$QueryExecution$$eagerlyExecute$1(QueryExecution.scala:154)
+		at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:169)
+		at org.apache.spark.sql.execution.QueryExecution$$anonfun$eagerlyExecuteCommands$3.applyOrElse(QueryExecution.scala:164)
+		at org.apache.spark.sql.catalyst.trees.TreeNode.$anonfun$transformDownWithPruning$1(TreeNode.scala:470)
+		at org.apache.spark.sql.catalyst.trees.CurrentOrigin$.withOrigin(origin.scala:86)
+		at org.apache.spark.sql.catalyst.trees.TreeNode.transformDownWithPruning(TreeNode.scala:470)
+		at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.org$apache$spark$sql$catalyst$plans$logical$AnalysisHelper$$super$transformDownWithPruning(LogicalPlan.scala:37)
+		at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning(AnalysisHelper.scala:360)
+		at org.apache.spark.sql.catalyst.plans.logical.AnalysisHelper.transformDownWithPruning$(AnalysisHelper.scala:356)
+		at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+		at org.apache.spark.sql.catalyst.plans.logical.LogicalPlan.transformDownWithPruning(LogicalPlan.scala:37)
+		at org.apache.spark.sql.catalyst.trees.TreeNode.transformDown(TreeNode.scala:446)
+		at org.apache.spark.sql.execution.QueryExecution.eagerlyExecuteCommands(QueryExecution.scala:164)
+		at org.apache.spark.sql.execution.QueryExecution.$anonfun$lazyCommandExecuted$1(QueryExecution.scala:126)
+		at scala.util.Try$.apply(Try.scala:217)
+		at org.apache.spark.util.Utils$.doTryWithCallerStacktrace(Utils.scala:1378)
+		at org.apache.spark.util.LazyTry.tryT$lzycompute(LazyTry.scala:46)
+		at org.apache.spark.util.LazyTry.tryT(LazyTry.scala:46)
+		... 19 more
+
+26/01/31 06:58:32 INFO SparkContext: SparkContext is stopping with exitCode 0 from stop at SparkSubmit.scala:1036.
+26/01/31 06:58:32 INFO SparkUI: Stopped Spark web UI at http://spark-dri-ingestion-20260131t065805-9fe2fc9c12d8462a-driver-svc.default.svc:4040
+26/01/31 06:58:32 INFO KubernetesClusterSchedulerBackend: Shutting down all executors
+26/01/31 06:58:32 INFO KubernetesClusterSchedulerBackend$KubernetesDriverEndpoint: Asking each executor to shut down
+26/01/31 06:58:32 INFO ExecutorPodsWatchSnapshotSource: Kubernetes client has been closed.
+26/01/31 06:58:32 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+26/01/31 06:58:32 INFO MemoryStore: MemoryStore started with capacity 1048.8 MiB
+26/01/31 06:58:32 INFO MemoryStore: MemoryStore cleared
+26/01/31 06:58:32 INFO BlockManager: BlockManager stopped
+26/01/31 06:58:32 INFO BlockManagerMaster: BlockManagerMaster stopped
+26/01/31 06:58:32 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+26/01/31 06:58:32 INFO SparkContext: Successfully stopped SparkContext
+26/01/31 06:58:33 INFO ShutdownHookManager: Shutdown hook called
+26/01/31 06:58:33 INFO ShutdownHookManager: Deleting directory /var/data/spark-1c3c900d-193c-4df2-b052-b028740ed143/spark-690ad104-cd1e-4cbb-9c96-ebc618e7630b/pyspark-c47a5b1e-7023-4276-8239-60cbc7d5a7c1
+26/01/31 06:58:33 INFO ShutdownHookManager: Deleting directory /tmp/spark-0f735cb9-db55-4339-871d-5b47caac9178
+26/01/31 06:58:33 INFO ShutdownHookManager: Deleting directory /tmp/artifacts-2ef999e6-49bd-4aa0-a9e1-da320898b47c
+26/01/31 06:58:33 INFO ShutdownHookManager: Deleting directory /var/data/spark-1c3c900d-193c-4df2-b052-b028740ed143/spark-690ad104-cd1e-4cbb-9c96-ebc618e7630b
