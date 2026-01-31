@@ -12,16 +12,23 @@ default_args = {
 }
 
 with DAG(
-    'spark_dri_ingestion_v2',
+    'spark_dri_ingestion_v3',
     default_args=default_args,
-    description='Spark DRI Ingestion DAG',
+    description='Flexible Spark DRI Ingestion DAG',
     schedule_interval=None,
     catchup=False,
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
+    # The manifest 'spark_dri_ingestion_manifest.yaml' now uses:
+    # 1. Kubernetes Secret 'spark-s3-credentials' for keys.
+    # 2. Kubernetes ConfigMap 'spark-config' for global defaults.
+    # 3. Environment variables for dynamic endpoint assignment.
     submit_job = SparkKubernetesOperator(
         task_id='submit_spark_job',
         namespace='default',
         application_file="spark_dri_ingestion_manifest.yaml",
+        params={
+            's3_endpoint': 'http://minio.default.svc.cluster.local:9000'
+        }
     )
