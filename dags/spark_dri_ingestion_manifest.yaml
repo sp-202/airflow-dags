@@ -59,3 +59,4 @@ spec:
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
         value: "minioadmin"
+      
