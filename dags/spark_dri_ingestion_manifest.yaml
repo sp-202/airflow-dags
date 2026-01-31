@@ -30,8 +30,10 @@ spec:
       - name: "dags-volume"
         mountPath: "/opt/spark/repo"
       - name: "spark-config-volume"
-        mountPath: "/opt/spark/conf"
+        mountPath: "/mnt/spark-conf"
     env:
+      - name: "SPARK_CONF_DIR"
+        value: "/mnt/spark-conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
@@ -44,8 +46,10 @@ spec:
       version: "4.0.1"
     volumeMounts:
       - name: "spark-config-volume"
-        mountPath: "/opt/spark/conf"
+        mountPath: "/mnt/spark-conf"
     env:
+      - name: "SPARK_CONF_DIR"
+        value: "/mnt/spark-conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
