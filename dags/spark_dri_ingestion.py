@@ -17,10 +17,11 @@ with DAG(
     description='Spark DRI Ingestion DAG',
     schedule_interval=None,
     catchup=False,
+    template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
     submit_job = SparkKubernetesOperator(
         task_id='submit_spark_job',
         namespace='default',
-        application_file=os.path.join(os.path.dirname(__file__), "spark_dri_ingestion_manifest.yaml"),
+        application_file="spark_dri_ingestion_manifest.yaml",
     )
