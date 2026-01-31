@@ -1,0 +1,450 @@
+++ id -u
++ myuid=0
+++ id -g
++ mygid=0
++ set +e
+++ getent passwd 0
++ uidentry=root:x:0:0:root:/root:/bin/bash
++ set -e
++ '[' -z root:x:0:0:root:/root:/bin/bash ']'
++ '[' -z /opt/java/openjdk ']'
++ SPARK_CLASSPATH=':/opt/spark/jars/*'
++ env
++ grep SPARK_JAVA_OPT_
++ sort -t_ -k4 -n
++ sed 's/[^=]*=\(.*\)/\1/g'
+++ command -v readarray
++ '[' readarray ']'
++ readarray -t SPARK_EXECUTOR_JAVA_OPTS
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z ']'
++ '[' -n '' ']'
++ '[' -z ']'
++ '[' -z x ']'
++ SPARK_CLASSPATH='/etc/spark/conf::/opt/spark/jars/*'
++ SPARK_CLASSPATH='/etc/spark/conf::/opt/spark/jars/*:/opt/spark'
++ case "$1" in
++ shift 1
++ CMD=("$SPARK_HOME/bin/spark-submit" --conf "spark.driver.bindAddress=$SPARK_DRIVER_BIND_ADDRESS" --conf "spark.executorEnv.SPARK_DRIVER_POD_IP=$SPARK_DRIVER_BIND_ADDRESS" --deploy-mode client "$@")
++ exec /usr/bin/tini -s -- /opt/spark/bin/spark-submit --conf spark.driver.bindAddress=10.42.0.132 --conf spark.executorEnv.SPARK_DRIVER_POD_IP=10.42.0.132 --deploy-mode client --properties-file /opt/spark/conf/spark.properties --class org.apache.spark.deploy.PythonRunner local:///opt/spark/repo/repo/scripts/ingest_dri_data.py
+WARNING: Using incubator modules: jdk.incubator.vector
+26/01/31 07:17:34 WARN NativeCodeLoader: Unable to load native-hadoop library for your platform... using builtin-java classes where applicable
+Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+26/01/31 07:17:35 INFO SparkContext: Running Spark version 4.0.1
+26/01/31 07:17:35 INFO SparkContext: OS info Linux, 6.12.63+deb13-cloud-amd64, amd64
+26/01/31 07:17:35 INFO SparkContext: Java version 17.0.17
+26/01/31 07:17:35 INFO ResourceUtils: ==============================================================
+26/01/31 07:17:35 INFO ResourceUtils: No custom resources configured for spark.driver.
+26/01/31 07:17:35 INFO ResourceUtils: ==============================================================
+26/01/31 07:17:35 INFO SparkContext: Submitted application: RandomDeltaGen
+26/01/31 07:17:35 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 12000, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+26/01/31 07:17:35 INFO ResourceProfile: Limiting resource is cpus at 1 tasks per executor
+26/01/31 07:17:35 INFO ResourceProfileManager: Added ResourceProfile id: 0
+26/01/31 07:17:35 INFO SecurityManager: Changing view acls to: root
+26/01/31 07:17:35 INFO SecurityManager: Changing modify acls to: root
+26/01/31 07:17:35 INFO SecurityManager: Changing view acls groups to: root
+26/01/31 07:17:35 INFO SecurityManager: Changing modify acls groups to: root
+26/01/31 07:17:35 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: root groups with view permissions: EMPTY; users with modify permissions: root; groups with modify permissions: EMPTY; RPC SSL disabled
+26/01/31 07:17:36 INFO Utils: Successfully started service 'sparkDriver' on port 7078.
+26/01/31 07:17:36 INFO SparkEnv: Registering MapOutputTracker
+26/01/31 07:17:36 INFO SparkEnv: Registering BlockManagerMaster
+26/01/31 07:17:36 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+26/01/31 07:17:36 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+26/01/31 07:17:36 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+26/01/31 07:17:36 INFO DiskBlockManager: Created local directory at /var/data/spark-25fcf6de-44eb-4409-8d2b-2798aa34b055/blockmgr-98f63355-a28c-45ab-92e8-66612615de52
+26/01/31 07:17:36 INFO SparkEnv: Registering OutputCommitCoordinator
+26/01/31 07:17:36 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+26/01/31 07:17:36 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+26/01/31 07:17:36 INFO SecurityManager: Changing view acls to: root
+26/01/31 07:17:36 INFO SecurityManager: Changing modify acls to: root
+26/01/31 07:17:36 INFO SecurityManager: Changing view acls groups to: root
+26/01/31 07:17:36 INFO SecurityManager: Changing modify acls groups to: root
+26/01/31 07:17:36 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: root groups with view permissions: EMPTY; users with modify permissions: root; groups with modify permissions: EMPTY; RPC SSL disabled
+26/01/31 07:17:36 INFO SparkKubernetesClientFactory: Auto-configuring K8S client using current context from users K8S config file
+26/01/31 07:17:39 INFO ExecutorPodsAllocator: Going to request 1 executors from Kubernetes for ResourceProfile Id: 0, target: 1, known: 0, sharedSlotFromPendingPods: 2147483647.
+26/01/31 07:17:40 INFO ExecutorPodsAllocator: Found 0 reusable PVCs from 0 PVCs
+26/01/31 07:17:40 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 7079.
+26/01/31 07:17:40 INFO NettyBlockTransferService: Server created on spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc 10.42.0.132:7079
+26/01/31 07:17:40 INFO BasicExecutorFeatureStep: Decommissioning not enabled, skipping shutdown script
+26/01/31 07:17:40 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication policy
+26/01/31 07:17:40 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc, 7079, None)
+26/01/31 07:17:40 INFO BlockManagerMasterEndpoint: Registering block manager spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc:7079 with 1048.8 MiB RAM, BlockManagerId(driver, spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc, 7079, None)
+26/01/31 07:17:40 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc, 7079, None)
+26/01/31 07:17:40 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc, 7079, None)
+26/01/31 07:17:43 INFO KubernetesClusterSchedulerBackend$KubernetesDriverEndpoint: Registered executor NettyRpcEndpointRef(spark-client://Executor) (10.42.0.133:34780) with ID 1, ResourceProfileId 0
+26/01/31 07:17:43 INFO KubernetesClusterSchedulerBackend: SchedulerBackend is ready for scheduling beginning after reached minRegisteredResourcesRatio: 0.8
+26/01/31 07:17:43 INFO BlockManagerMasterEndpoint: Registering block manager 10.42.0.133:46531 with 6.9 GiB RAM, BlockManagerId(1, 10.42.0.133, 46531, None)
+Generating 10 million rows of random data...
+26/01/31 07:17:47 INFO SharedState: Setting hive.metastore.warehouse.dir ('null') to the value of spark.sql.warehouse.dir.
+26/01/31 07:17:47 WARN MetricsConfig: Cannot locate configuration: tried hadoop-metrics2-s3a-file-system.properties,hadoop-metrics2.properties
+26/01/31 07:17:47 INFO MetricsSystemImpl: Scheduled Metric snapshot period at 10 second(s).
+26/01/31 07:17:47 INFO MetricsSystemImpl: s3a-file-system metrics system started
+26/01/31 07:17:47 WARN ConfigurationHelper: Option fs.s3a.connection.acquisition.timeout is too low (60 ms). Setting to 15,000 ms instead
+SLF4J: Failed to load class "org.slf4j.impl.StaticLoggerBinder".
+SLF4J: Defaulting to no-operation (NOP) logger implementation
+SLF4J: See http://www.slf4j.org/codes.html#StaticLoggerBinder for further details.
+26/01/31 07:17:48 INFO SharedState: Warehouse path is 's3a://test-bucket/warehouse'.
+Writing data to s3a://test-bucket/random_data in Delta format...
+26/01/31 07:17:50 INFO DelegatingLogStore: LogStore LogStoreAdapter(io.delta.storage.S3SingleDriverLogStore) is used for scheme s3a
+26/01/31 07:17:51 INFO DeltaLog: Loading version 3.
+26/01/31 07:17:52 INFO Snapshot: [tableId=d8fb3c3e-6a46-4437-9704-8b9ee6299186] Created snapshot Snapshot(path=s3a://test-bucket/random_data/_delta_log, version=3, metadata=Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)), logSegment=LogSegment(s3a://test-bucket/random_data/_delta_log,3,ArraySeq(S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000000.json; isDirectory=false; length=1747; replication=1; blocksize=33554432; modification_time=1769834260683; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="704a9b8d2f4ae794e381327b57938293" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000001.json; isDirectory=false; length=1688; replication=1; blocksize=33554432; modification_time=1769837802351; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="27c7b294f79974e39dabe90d998084d8" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000002.json; isDirectory=false; length=1689; replication=1; blocksize=33554432; modification_time=1769838115216; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c757824c0373c4ecee484c146e826770" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000003.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769838295924; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c8d6e6618b9e8cdd9a7c8fb89174dc80" versionId=null),org.apache.spark.sql.delta.EmptyCheckpointProvider$@1c5c6f1b,1769838295924), checksumOpt=Some(VersionChecksum(Some(ea886614-56ef-485d-a561-810c7c3ae8f0),200161832,2,None,None,1,1,None,Some(List()),Some(List()),Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)),Protocol(1,2),None,None,Some(List(AddFile(part-00001-0992441e-58e4-492b-80b5-6f2bb89785d9-c000.snappy.parquet,Map(),100080535,1769838293000,false,{"numRecords":5000000,"minValues":{"id":5000000,"v1":1.2316603259510117E-7,"v2":-5.078541000431603},"maxValues":{"id":9999999,"v1":0.9999996933816011,"v2":5.0739392498573705},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None), AddFile(part-00000-b556567a-d8ca-486c-ba4b-440a0fb3abec-c000.snappy.parquet,Map(),100081297,1769838289000,false,{"numRecords":5000000,"minValues":{"id":0,"v1":6.382578910946179E-7,"v2":-4.954881541688437},"maxValues":{"id":4999999,"v1":0.9999999806969577,"v2":4.945530367903969},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None))))))
+26/01/31 07:17:52 INFO DeltaLog: Updated snapshot to Snapshot(path=s3a://test-bucket/random_data/_delta_log, version=3, metadata=Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)), logSegment=LogSegment(s3a://test-bucket/random_data/_delta_log,3,ArraySeq(S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000000.json; isDirectory=false; length=1747; replication=1; blocksize=33554432; modification_time=1769834260683; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="704a9b8d2f4ae794e381327b57938293" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000001.json; isDirectory=false; length=1688; replication=1; blocksize=33554432; modification_time=1769837802351; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="27c7b294f79974e39dabe90d998084d8" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000002.json; isDirectory=false; length=1689; replication=1; blocksize=33554432; modification_time=1769838115216; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c757824c0373c4ecee484c146e826770" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000003.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769838295924; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c8d6e6618b9e8cdd9a7c8fb89174dc80" versionId=null),org.apache.spark.sql.delta.EmptyCheckpointProvider$@1c5c6f1b,1769838295924), checksumOpt=Some(VersionChecksum(Some(ea886614-56ef-485d-a561-810c7c3ae8f0),200161832,2,None,None,1,1,None,Some(List()),Some(List()),Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)),Protocol(1,2),None,None,Some(List(AddFile(part-00001-0992441e-58e4-492b-80b5-6f2bb89785d9-c000.snappy.parquet,Map(),100080535,1769838293000,false,{"numRecords":5000000,"minValues":{"id":5000000,"v1":1.2316603259510117E-7,"v2":-5.078541000431603},"maxValues":{"id":9999999,"v1":0.9999996933816011,"v2":5.0739392498573705},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None), AddFile(part-00000-b556567a-d8ca-486c-ba4b-440a0fb3abec-c000.snappy.parquet,Map(),100081297,1769838289000,false,{"numRecords":5000000,"minValues":{"id":0,"v1":6.382578910946179E-7,"v2":-4.954881541688437},"maxValues":{"id":4999999,"v1":0.9999999806969577,"v2":4.945530367903969},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None))))))
+26/01/31 07:17:52 INFO Snapshot: DELTA: Compute snapshot for version: 3
+26/01/31 07:17:52 INFO MemoryStore: MemoryStore started with capacity 1048.8 MiB
+26/01/31 07:17:52 INFO MemoryStore: Block broadcast_0 stored as values in memory (estimated size 237.2 KiB, free 1048.6 MiB)
+26/01/31 07:17:52 INFO MemoryStore: Block broadcast_0_piece0 stored as bytes in memory (estimated size 41.2 KiB, free 1048.5 MiB)
+26/01/31 07:17:52 INFO SparkContext: Created broadcast 0 from save at NativeMethodAccessorImpl.java:0
+26/01/31 07:17:52 INFO DeltaLogFileIndex: Created DeltaLogFileIndex(JSON, numFilesInSegment: 4, totalFileSize: 6815)
+26/01/31 07:17:54 INFO DataSourceStrategy: Pruning directories with: Set()
+26/01/31 07:17:54 INFO FileSourceStrategy: Pushed Filters: 
+26/01/31 07:17:54 INFO FileSourceStrategy: Post-Scan Filters: Set()
+26/01/31 07:17:54 WARN SparkStringUtils: Truncated the string representation of a plan since it was too large. This behavior can be adjusted by setting 'spark.sql.debug.maxToStringFields'.
+26/01/31 07:17:56 INFO CodeGenerator: Code generated in 761.945208 ms
+26/01/31 07:17:56 INFO MemoryStore: Block broadcast_1 stored as values in memory (estimated size 237.5 KiB, free 1048.3 MiB)
+26/01/31 07:17:56 INFO MemoryStore: Block broadcast_1_piece0 stored as bytes in memory (estimated size 41.3 KiB, free 1048.3 MiB)
+26/01/31 07:17:56 INFO SparkContext: Created broadcast 1 from $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768
+26/01/31 07:17:56 INFO FileSourceScanExec: Planning scan with bin packing, max size: 8392015 bytes, open cost is considered as scanning 4194304 bytes.
+26/01/31 07:17:56 INFO DAGScheduler: Registering RDD 3 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) as input to shuffle 0
+26/01/31 07:17:56 INFO DAGScheduler: Got map stage job 0 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) with 2 output partitions
+26/01/31 07:17:56 INFO DAGScheduler: Final stage: ShuffleMapStage 0 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768)
+26/01/31 07:17:56 INFO DAGScheduler: Parents of final stage: List()
+26/01/31 07:17:56 INFO DAGScheduler: Missing parents: List()
+26/01/31 07:17:56 INFO DAGScheduler: Submitting ShuffleMapStage 0 (MapPartitionsRDD[3] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768), which has no missing parents
+26/01/31 07:17:57 INFO MemoryStore: Block broadcast_2 stored as values in memory (estimated size 100.7 KiB, free 1048.2 MiB)
+26/01/31 07:17:57 INFO MemoryStore: Block broadcast_2_piece0 stored as bytes in memory (estimated size 29.0 KiB, free 1048.1 MiB)
+26/01/31 07:17:57 INFO SparkContext: Created broadcast 2 from broadcast at DAGScheduler.scala:1676
+26/01/31 07:17:57 INFO DAGScheduler: Submitting 2 missing tasks from ShuffleMapStage 0 (MapPartitionsRDD[3] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) (first 15 tasks are for partitions Vector(0, 1))
+26/01/31 07:17:57 INFO TaskSchedulerImpl: Adding task set 0.0 with 2 tasks resource profile 0
+26/01/31 07:17:57 INFO TaskSetManager: Starting task 0.0 in stage 0.0 (TID 0) (10.42.0.133,executor 1, partition 0, PROCESS_LOCAL, 10467 bytes) 
+26/01/31 07:18:01 INFO TaskSetManager: Starting task 1.0 in stage 0.0 (TID 1) (10.42.0.133,executor 1, partition 1, PROCESS_LOCAL, 10467 bytes) 
+26/01/31 07:18:01 INFO TaskSetManager: Finished task 0.0 in stage 0.0 (TID 0) in 4313 ms on 10.42.0.133 (executor 1) (1/2)
+26/01/31 07:18:01 INFO TaskSetManager: Finished task 1.0 in stage 0.0 (TID 1) in 167 ms on 10.42.0.133 (executor 1) (2/2)
+26/01/31 07:18:01 INFO TaskSchedulerImpl: Removed TaskSet 0.0 whose tasks have all completed, from pool 
+26/01/31 07:18:01 INFO DAGScheduler: ShuffleMapStage 0 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) finished in 4712 ms
+26/01/31 07:18:01 INFO DAGScheduler: looking for newly runnable stages
+26/01/31 07:18:01 INFO DAGScheduler: running: HashSet()
+26/01/31 07:18:01 INFO DAGScheduler: waiting: HashSet()
+26/01/31 07:18:01 INFO DAGScheduler: failed: HashSet()
+26/01/31 07:18:03 INFO CodeGenerator: Generated method too long to be JIT compiled: org.apache.spark.sql.catalyst.expressions.GeneratedClass$GeneratedIteratorForCodegenStage3.serializefromobject_doConsume_0$ is 24033 bytes
+26/01/31 07:18:03 INFO CodeGenerator: Code generated in 1001.121216 ms
+26/01/31 07:18:03 INFO CodeGenerator: Code generated in 137.387689 ms
+26/01/31 07:18:04 INFO CodeGenerator: Code generated in 176.19808 ms
+26/01/31 07:18:04 INFO DAGScheduler: Registering RDD 13 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) as input to shuffle 1
+26/01/31 07:18:04 INFO DAGScheduler: Got map stage job 1 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) with 50 output partitions
+26/01/31 07:18:04 INFO DAGScheduler: Final stage: ShuffleMapStage 2 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768)
+26/01/31 07:18:04 INFO DAGScheduler: Parents of final stage: List(ShuffleMapStage 1)
+26/01/31 07:18:04 INFO DAGScheduler: Missing parents: List()
+26/01/31 07:18:04 INFO DAGScheduler: Submitting ShuffleMapStage 2 (MapPartitionsRDD[13] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768), which has no missing parents
+26/01/31 07:18:04 INFO MemoryStore: Block broadcast_3 stored as values in memory (estimated size 605.9 KiB, free 1047.7 MiB)
+26/01/31 07:18:04 INFO MemoryStore: Block broadcast_3_piece0 stored as bytes in memory (estimated size 137.3 KiB, free 1047.5 MiB)
+26/01/31 07:18:04 INFO SparkContext: Created broadcast 3 from broadcast at DAGScheduler.scala:1676
+26/01/31 07:18:04 INFO DAGScheduler: Submitting 50 missing tasks from ShuffleMapStage 2 (MapPartitionsRDD[13] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) (first 15 tasks are for partitions Vector(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
+26/01/31 07:18:04 INFO TaskSchedulerImpl: Adding task set 2.0 with 50 tasks resource profile 0
+26/01/31 07:18:04 INFO TaskSetManager: Starting task 15.0 in stage 2.0 (TID 2) (10.42.0.133,executor 1, partition 15, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:04 INFO MapOutputTrackerMasterEndpoint: Asked to send map output locations for shuffle 0 to 10.42.0.133:34780
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 21.0 in stage 2.0 (TID 3) (10.42.0.133,executor 1, partition 21, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 15.0 in stage 2.0 (TID 2) in 1737 ms on 10.42.0.133 (executor 1) (1/50)
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 31.0 in stage 2.0 (TID 4) (10.42.0.133,executor 1, partition 31, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 21.0 in stage 2.0 (TID 3) in 106 ms on 10.42.0.133 (executor 1) (2/50)
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 37.0 in stage 2.0 (TID 5) (10.42.0.133,executor 1, partition 37, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 31.0 in stage 2.0 (TID 4) in 107 ms on 10.42.0.133 (executor 1) (3/50)
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 40.0 in stage 2.0 (TID 6) (10.42.0.133,executor 1, partition 40, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 37.0 in stage 2.0 (TID 5) in 99 ms on 10.42.0.133 (executor 1) (4/50)
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 42.0 in stage 2.0 (TID 7) (10.42.0.133,executor 1, partition 42, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 40.0 in stage 2.0 (TID 6) in 87 ms on 10.42.0.133 (executor 1) (5/50)
+26/01/31 07:18:06 INFO TaskSetManager: Starting task 45.0 in stage 2.0 (TID 8) (10.42.0.133,executor 1, partition 45, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:06 INFO TaskSetManager: Finished task 42.0 in stage 2.0 (TID 7) in 338 ms on 10.42.0.133 (executor 1) (6/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 49.0 in stage 2.0 (TID 9) (10.42.0.133,executor 1, partition 49, NODE_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 45.0 in stage 2.0 (TID 8) in 82 ms on 10.42.0.133 (executor 1) (7/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 0.0 in stage 2.0 (TID 10) (10.42.0.133,executor 1, partition 0, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 49.0 in stage 2.0 (TID 9) in 90 ms on 10.42.0.133 (executor 1) (8/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 1.0 in stage 2.0 (TID 11) (10.42.0.133,executor 1, partition 1, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 0.0 in stage 2.0 (TID 10) in 81 ms on 10.42.0.133 (executor 1) (9/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 2.0 in stage 2.0 (TID 12) (10.42.0.133,executor 1, partition 2, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 1.0 in stage 2.0 (TID 11) in 78 ms on 10.42.0.133 (executor 1) (10/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 3.0 in stage 2.0 (TID 13) (10.42.0.133,executor 1, partition 3, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 2.0 in stage 2.0 (TID 12) in 72 ms on 10.42.0.133 (executor 1) (11/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 4.0 in stage 2.0 (TID 14) (10.42.0.133,executor 1, partition 4, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 3.0 in stage 2.0 (TID 13) in 64 ms on 10.42.0.133 (executor 1) (12/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 5.0 in stage 2.0 (TID 15) (10.42.0.133,executor 1, partition 5, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 4.0 in stage 2.0 (TID 14) in 62 ms on 10.42.0.133 (executor 1) (13/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 6.0 in stage 2.0 (TID 16) (10.42.0.133,executor 1, partition 6, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 5.0 in stage 2.0 (TID 15) in 66 ms on 10.42.0.133 (executor 1) (14/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 7.0 in stage 2.0 (TID 17) (10.42.0.133,executor 1, partition 7, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 6.0 in stage 2.0 (TID 16) in 64 ms on 10.42.0.133 (executor 1) (15/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 8.0 in stage 2.0 (TID 18) (10.42.0.133,executor 1, partition 8, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 7.0 in stage 2.0 (TID 17) in 67 ms on 10.42.0.133 (executor 1) (16/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 9.0 in stage 2.0 (TID 19) (10.42.0.133,executor 1, partition 9, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 8.0 in stage 2.0 (TID 18) in 72 ms on 10.42.0.133 (executor 1) (17/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 10.0 in stage 2.0 (TID 20) (10.42.0.133,executor 1, partition 10, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 9.0 in stage 2.0 (TID 19) in 63 ms on 10.42.0.133 (executor 1) (18/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 11.0 in stage 2.0 (TID 21) (10.42.0.133,executor 1, partition 11, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 10.0 in stage 2.0 (TID 20) in 54 ms on 10.42.0.133 (executor 1) (19/50)
+26/01/31 07:18:07 INFO TaskSetManager: Starting task 12.0 in stage 2.0 (TID 22) (10.42.0.133,executor 1, partition 12, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:07 INFO TaskSetManager: Finished task 11.0 in stage 2.0 (TID 21) in 75 ms on 10.42.0.133 (executor 1) (20/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 13.0 in stage 2.0 (TID 23) (10.42.0.133,executor 1, partition 13, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 12.0 in stage 2.0 (TID 22) in 78 ms on 10.42.0.133 (executor 1) (21/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 14.0 in stage 2.0 (TID 24) (10.42.0.133,executor 1, partition 14, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 13.0 in stage 2.0 (TID 23) in 66 ms on 10.42.0.133 (executor 1) (22/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 16.0 in stage 2.0 (TID 25) (10.42.0.133,executor 1, partition 16, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 14.0 in stage 2.0 (TID 24) in 69 ms on 10.42.0.133 (executor 1) (23/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 17.0 in stage 2.0 (TID 26) (10.42.0.133,executor 1, partition 17, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 16.0 in stage 2.0 (TID 25) in 72 ms on 10.42.0.133 (executor 1) (24/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 18.0 in stage 2.0 (TID 27) (10.42.0.133,executor 1, partition 18, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 17.0 in stage 2.0 (TID 26) in 103 ms on 10.42.0.133 (executor 1) (25/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 19.0 in stage 2.0 (TID 28) (10.42.0.133,executor 1, partition 19, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 18.0 in stage 2.0 (TID 27) in 54 ms on 10.42.0.133 (executor 1) (26/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 20.0 in stage 2.0 (TID 29) (10.42.0.133,executor 1, partition 20, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 19.0 in stage 2.0 (TID 28) in 64 ms on 10.42.0.133 (executor 1) (27/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 22.0 in stage 2.0 (TID 30) (10.42.0.133,executor 1, partition 22, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 20.0 in stage 2.0 (TID 29) in 57 ms on 10.42.0.133 (executor 1) (28/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 23.0 in stage 2.0 (TID 31) (10.42.0.133,executor 1, partition 23, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 22.0 in stage 2.0 (TID 30) in 57 ms on 10.42.0.133 (executor 1) (29/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 24.0 in stage 2.0 (TID 32) (10.42.0.133,executor 1, partition 24, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 23.0 in stage 2.0 (TID 31) in 60 ms on 10.42.0.133 (executor 1) (30/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 25.0 in stage 2.0 (TID 33) (10.42.0.133,executor 1, partition 25, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 24.0 in stage 2.0 (TID 32) in 61 ms on 10.42.0.133 (executor 1) (31/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 26.0 in stage 2.0 (TID 34) (10.42.0.133,executor 1, partition 26, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 25.0 in stage 2.0 (TID 33) in 50 ms on 10.42.0.133 (executor 1) (32/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 27.0 in stage 2.0 (TID 35) (10.42.0.133,executor 1, partition 27, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 26.0 in stage 2.0 (TID 34) in 53 ms on 10.42.0.133 (executor 1) (33/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 28.0 in stage 2.0 (TID 36) (10.42.0.133,executor 1, partition 28, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 27.0 in stage 2.0 (TID 35) in 51 ms on 10.42.0.133 (executor 1) (34/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 29.0 in stage 2.0 (TID 37) (10.42.0.133,executor 1, partition 29, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 28.0 in stage 2.0 (TID 36) in 53 ms on 10.42.0.133 (executor 1) (35/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 30.0 in stage 2.0 (TID 38) (10.42.0.133,executor 1, partition 30, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 29.0 in stage 2.0 (TID 37) in 54 ms on 10.42.0.133 (executor 1) (36/50)
+26/01/31 07:18:08 INFO TaskSetManager: Starting task 32.0 in stage 2.0 (TID 39) (10.42.0.133,executor 1, partition 32, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:08 INFO TaskSetManager: Finished task 30.0 in stage 2.0 (TID 38) in 51 ms on 10.42.0.133 (executor 1) (37/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 33.0 in stage 2.0 (TID 40) (10.42.0.133,executor 1, partition 33, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 32.0 in stage 2.0 (TID 39) in 53 ms on 10.42.0.133 (executor 1) (38/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 34.0 in stage 2.0 (TID 41) (10.42.0.133,executor 1, partition 34, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 33.0 in stage 2.0 (TID 40) in 50 ms on 10.42.0.133 (executor 1) (39/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 35.0 in stage 2.0 (TID 42) (10.42.0.133,executor 1, partition 35, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 34.0 in stage 2.0 (TID 41) in 51 ms on 10.42.0.133 (executor 1) (40/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 36.0 in stage 2.0 (TID 43) (10.42.0.133,executor 1, partition 36, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 35.0 in stage 2.0 (TID 42) in 50 ms on 10.42.0.133 (executor 1) (41/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 38.0 in stage 2.0 (TID 44) (10.42.0.133,executor 1, partition 38, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 36.0 in stage 2.0 (TID 43) in 60 ms on 10.42.0.133 (executor 1) (42/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 39.0 in stage 2.0 (TID 45) (10.42.0.133,executor 1, partition 39, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 38.0 in stage 2.0 (TID 44) in 51 ms on 10.42.0.133 (executor 1) (43/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 41.0 in stage 2.0 (TID 46) (10.42.0.133,executor 1, partition 41, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 39.0 in stage 2.0 (TID 45) in 48 ms on 10.42.0.133 (executor 1) (44/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 43.0 in stage 2.0 (TID 47) (10.42.0.133,executor 1, partition 43, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 41.0 in stage 2.0 (TID 46) in 64 ms on 10.42.0.133 (executor 1) (45/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 44.0 in stage 2.0 (TID 48) (10.42.0.133,executor 1, partition 44, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 43.0 in stage 2.0 (TID 47) in 64 ms on 10.42.0.133 (executor 1) (46/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 46.0 in stage 2.0 (TID 49) (10.42.0.133,executor 1, partition 46, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 44.0 in stage 2.0 (TID 48) in 55 ms on 10.42.0.133 (executor 1) (47/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 47.0 in stage 2.0 (TID 50) (10.42.0.133,executor 1, partition 47, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 46.0 in stage 2.0 (TID 49) in 59 ms on 10.42.0.133 (executor 1) (48/50)
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 48.0 in stage 2.0 (TID 51) (10.42.0.133,executor 1, partition 48, PROCESS_LOCAL, 9639 bytes) 
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 47.0 in stage 2.0 (TID 50) in 45 ms on 10.42.0.133 (executor 1) (49/50)
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 48.0 in stage 2.0 (TID 51) in 49 ms on 10.42.0.133 (executor 1) (50/50)
+26/01/31 07:18:09 INFO TaskSchedulerImpl: Removed TaskSet 2.0 whose tasks have all completed, from pool 
+26/01/31 07:18:09 INFO DAGScheduler: ShuffleMapStage 2 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) finished in 5306 ms
+26/01/31 07:18:09 INFO DAGScheduler: looking for newly runnable stages
+26/01/31 07:18:09 INFO DAGScheduler: running: HashSet()
+26/01/31 07:18:09 INFO DAGScheduler: waiting: HashSet()
+26/01/31 07:18:09 INFO DAGScheduler: failed: HashSet()
+26/01/31 07:18:09 INFO SparkContext: Starting job: $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768
+26/01/31 07:18:09 INFO DAGScheduler: Got job 2 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) with 1 output partitions
+26/01/31 07:18:09 INFO DAGScheduler: Final stage: ResultStage 5 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768)
+26/01/31 07:18:09 INFO DAGScheduler: Parents of final stage: List(ShuffleMapStage 4)
+26/01/31 07:18:09 INFO DAGScheduler: Missing parents: List()
+26/01/31 07:18:09 INFO DAGScheduler: Submitting ResultStage 5 (MapPartitionsRDD[16] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768), which has no missing parents
+26/01/31 07:18:09 INFO MemoryStore: Block broadcast_4 stored as values in memory (estimated size 539.5 KiB, free 1047.0 MiB)
+26/01/31 07:18:09 INFO MemoryStore: Block broadcast_4_piece0 stored as bytes in memory (estimated size 123.4 KiB, free 1046.9 MiB)
+26/01/31 07:18:09 INFO SparkContext: Created broadcast 4 from broadcast at DAGScheduler.scala:1676
+26/01/31 07:18:09 INFO DAGScheduler: Submitting 1 missing tasks from ResultStage 5 (MapPartitionsRDD[16] at $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) (first 15 tasks are for partitions Vector(0))
+26/01/31 07:18:09 INFO TaskSchedulerImpl: Adding task set 5.0 with 1 tasks resource profile 0
+26/01/31 07:18:09 INFO TaskSetManager: Starting task 0.0 in stage 5.0 (TID 52) (10.42.0.133,executor 1, partition 0, NODE_LOCAL, 9650 bytes) 
+26/01/31 07:18:09 INFO MapOutputTrackerMasterEndpoint: Asked to send map output locations for shuffle 1 to 10.42.0.133:34780
+26/01/31 07:18:09 INFO TaskSetManager: Finished task 0.0 in stage 5.0 (TID 52) in 175 ms on 10.42.0.133 (executor 1) (1/1)
+26/01/31 07:18:09 INFO TaskSchedulerImpl: Removed TaskSet 5.0 whose tasks have all completed, from pool 
+26/01/31 07:18:09 INFO DAGScheduler: ResultStage 5 ($anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768) finished in 195 ms
+26/01/31 07:18:09 INFO DAGScheduler: Job 2 is finished. Cancelling potential speculative or zombie tasks for this job
+26/01/31 07:18:09 INFO TaskSchedulerImpl: Canceling stage 5
+26/01/31 07:18:09 INFO TaskSchedulerImpl: Killing all running tasks in stage 5: Stage finished
+26/01/31 07:18:09 INFO DAGScheduler: Job 2 finished: $anonfun$withThreadLocalCaptured$2 at CompletableFuture.java:1768, took 256.194809 ms
+26/01/31 07:18:10 INFO CodeGenerator: Code generated in 102.509349 ms
+26/01/31 07:18:10 INFO Snapshot: DELTA: Done
+26/01/31 07:18:10 INFO ParquetUtils: Using default output committer for Parquet: org.apache.parquet.hadoop.ParquetOutputCommitter
+26/01/31 07:18:10 INFO CodeGenerator: Code generated in 29.73728 ms
+26/01/31 07:18:10 INFO SparkContext: Starting job: save at NativeMethodAccessorImpl.java:0
+26/01/31 07:18:10 INFO DAGScheduler: Got job 3 (save at NativeMethodAccessorImpl.java:0) with 2 output partitions
+26/01/31 07:18:10 INFO DAGScheduler: Final stage: ResultStage 6 (save at NativeMethodAccessorImpl.java:0)
+26/01/31 07:18:10 INFO DAGScheduler: Parents of final stage: List()
+26/01/31 07:18:10 INFO DAGScheduler: Missing parents: List()
+26/01/31 07:18:10 INFO DAGScheduler: Submitting ResultStage 6 (MapPartitionsRDD[19] at save at NativeMethodAccessorImpl.java:0), which has no missing parents
+26/01/31 07:18:10 INFO MemoryStore: Block broadcast_5 stored as values in memory (estimated size 372.7 KiB, free 1046.5 MiB)
+26/01/31 07:18:10 INFO MemoryStore: Block broadcast_5_piece0 stored as bytes in memory (estimated size 135.3 KiB, free 1046.4 MiB)
+26/01/31 07:18:10 INFO SparkContext: Created broadcast 5 from broadcast at DAGScheduler.scala:1676
+26/01/31 07:18:10 INFO DAGScheduler: Submitting 2 missing tasks from ResultStage 6 (MapPartitionsRDD[19] at save at NativeMethodAccessorImpl.java:0) (first 15 tasks are for partitions Vector(0, 1))
+26/01/31 07:18:10 INFO TaskSchedulerImpl: Adding task set 6.0 with 2 tasks resource profile 0
+26/01/31 07:18:10 INFO TaskSetManager: Starting task 0.0 in stage 6.0 (TID 53) (10.42.0.133,executor 1, partition 0, PROCESS_LOCAL, 9785 bytes) 
+26/01/31 07:18:15 INFO TaskSetManager: Starting task 1.0 in stage 6.0 (TID 54) (10.42.0.133,executor 1, partition 1, PROCESS_LOCAL, 9785 bytes) 
+26/01/31 07:18:15 INFO TaskSetManager: Finished task 0.0 in stage 6.0 (TID 53) in 4698 ms on 10.42.0.133 (executor 1) (1/2)
+26/01/31 07:18:19 INFO TaskSetManager: Finished task 1.0 in stage 6.0 (TID 54) in 3458 ms on 10.42.0.133 (executor 1) (2/2)
+26/01/31 07:18:19 INFO TaskSchedulerImpl: Removed TaskSet 6.0 whose tasks have all completed, from pool 
+26/01/31 07:18:19 INFO DAGScheduler: ResultStage 6 (save at NativeMethodAccessorImpl.java:0) finished in 8218 ms
+26/01/31 07:18:19 INFO DAGScheduler: Job 3 is finished. Cancelling potential speculative or zombie tasks for this job
+26/01/31 07:18:19 INFO TaskSchedulerImpl: Canceling stage 6
+26/01/31 07:18:19 INFO TaskSchedulerImpl: Killing all running tasks in stage 6: Stage finished
+26/01/31 07:18:19 INFO DAGScheduler: Job 3 finished: save at NativeMethodAccessorImpl.java:0, took 8223.491978 ms
+26/01/31 07:18:19 INFO DeltaFileFormatWriter: Start to commit write Job 286c5f18-89fd-4b83-bdb5-5ba7df7b6a7a.
+26/01/31 07:18:19 INFO DeltaFileFormatWriter: Write Job 286c5f18-89fd-4b83-bdb5-5ba7df7b6a7a committed. Elapsed time: 1 ms.
+26/01/31 07:18:19 INFO DeltaFileFormatWriter: Finished processing stats for write job 286c5f18-89fd-4b83-bdb5-5ba7df7b6a7a.
+26/01/31 07:18:19 INFO CodeGenerator: Code generated in 183.858039 ms
+26/01/31 07:18:19 INFO SparkContext: Starting job: $anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128
+26/01/31 07:18:19 INFO DAGScheduler: Got job 4 ($anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128) with 50 output partitions
+26/01/31 07:18:19 INFO DAGScheduler: Final stage: ResultStage 8 ($anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128)
+26/01/31 07:18:19 INFO DAGScheduler: Parents of final stage: List(ShuffleMapStage 7)
+26/01/31 07:18:19 INFO DAGScheduler: Missing parents: List()
+26/01/31 07:18:19 INFO DAGScheduler: Submitting ResultStage 8 (MapPartitionsRDD[21] at $anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128), which has no missing parents
+26/01/31 07:18:19 INFO MemoryStore: Block broadcast_6 stored as values in memory (estimated size 614.8 KiB, free 1045.8 MiB)
+26/01/31 07:18:19 INFO MemoryStore: Block broadcast_6_piece0 stored as bytes in memory (estimated size 137.9 KiB, free 1045.7 MiB)
+26/01/31 07:18:19 INFO SparkContext: Created broadcast 6 from broadcast at DAGScheduler.scala:1676
+26/01/31 07:18:19 INFO DAGScheduler: Submitting 50 missing tasks from ResultStage 8 (MapPartitionsRDD[21] at $anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128) (first 15 tasks are for partitions Vector(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14))
+26/01/31 07:18:19 INFO TaskSchedulerImpl: Adding task set 8.0 with 50 tasks resource profile 0
+26/01/31 07:18:19 INFO TaskSetManager: Starting task 0.0 in stage 8.0 (TID 55) (10.42.0.133,executor 1, partition 0, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:19 INFO TaskSetManager: Starting task 1.0 in stage 8.0 (TID 56) (10.42.0.133,executor 1, partition 1, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:19 INFO TaskSetManager: Finished task 0.0 in stage 8.0 (TID 55) in 116 ms on 10.42.0.133 (executor 1) (1/50)
+26/01/31 07:18:19 INFO TaskSetManager: Starting task 2.0 in stage 8.0 (TID 57) (10.42.0.133,executor 1, partition 2, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:19 INFO TaskSetManager: Finished task 1.0 in stage 8.0 (TID 56) in 24 ms on 10.42.0.133 (executor 1) (2/50)
+26/01/31 07:18:19 INFO TaskSetManager: Starting task 3.0 in stage 8.0 (TID 58) (10.42.0.133,executor 1, partition 3, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:19 INFO TaskSetManager: Finished task 2.0 in stage 8.0 (TID 57) in 32 ms on 10.42.0.133 (executor 1) (3/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 4.0 in stage 8.0 (TID 59) (10.42.0.133,executor 1, partition 4, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 3.0 in stage 8.0 (TID 58) in 28 ms on 10.42.0.133 (executor 1) (4/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 5.0 in stage 8.0 (TID 60) (10.42.0.133,executor 1, partition 5, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 4.0 in stage 8.0 (TID 59) in 27 ms on 10.42.0.133 (executor 1) (5/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 6.0 in stage 8.0 (TID 61) (10.42.0.133,executor 1, partition 6, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 5.0 in stage 8.0 (TID 60) in 33 ms on 10.42.0.133 (executor 1) (6/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 7.0 in stage 8.0 (TID 62) (10.42.0.133,executor 1, partition 7, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 6.0 in stage 8.0 (TID 61) in 32 ms on 10.42.0.133 (executor 1) (7/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 8.0 in stage 8.0 (TID 63) (10.42.0.133,executor 1, partition 8, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 7.0 in stage 8.0 (TID 62) in 19 ms on 10.42.0.133 (executor 1) (8/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 9.0 in stage 8.0 (TID 64) (10.42.0.133,executor 1, partition 9, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 8.0 in stage 8.0 (TID 63) in 32 ms on 10.42.0.133 (executor 1) (9/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 10.0 in stage 8.0 (TID 65) (10.42.0.133,executor 1, partition 10, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 9.0 in stage 8.0 (TID 64) in 36 ms on 10.42.0.133 (executor 1) (10/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 11.0 in stage 8.0 (TID 66) (10.42.0.133,executor 1, partition 11, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 10.0 in stage 8.0 (TID 65) in 20 ms on 10.42.0.133 (executor 1) (11/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 12.0 in stage 8.0 (TID 67) (10.42.0.133,executor 1, partition 12, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 11.0 in stage 8.0 (TID 66) in 21 ms on 10.42.0.133 (executor 1) (12/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 13.0 in stage 8.0 (TID 68) (10.42.0.133,executor 1, partition 13, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 12.0 in stage 8.0 (TID 67) in 27 ms on 10.42.0.133 (executor 1) (13/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 14.0 in stage 8.0 (TID 69) (10.42.0.133,executor 1, partition 14, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 13.0 in stage 8.0 (TID 68) in 19 ms on 10.42.0.133 (executor 1) (14/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 15.0 in stage 8.0 (TID 70) (10.42.0.133,executor 1, partition 15, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 14.0 in stage 8.0 (TID 69) in 24 ms on 10.42.0.133 (executor 1) (15/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 16.0 in stage 8.0 (TID 71) (10.42.0.133,executor 1, partition 16, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 15.0 in stage 8.0 (TID 70) in 23 ms on 10.42.0.133 (executor 1) (16/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 17.0 in stage 8.0 (TID 72) (10.42.0.133,executor 1, partition 17, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 16.0 in stage 8.0 (TID 71) in 24 ms on 10.42.0.133 (executor 1) (17/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 18.0 in stage 8.0 (TID 73) (10.42.0.133,executor 1, partition 18, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 17.0 in stage 8.0 (TID 72) in 23 ms on 10.42.0.133 (executor 1) (18/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 19.0 in stage 8.0 (TID 74) (10.42.0.133,executor 1, partition 19, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 18.0 in stage 8.0 (TID 73) in 28 ms on 10.42.0.133 (executor 1) (19/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 20.0 in stage 8.0 (TID 75) (10.42.0.133,executor 1, partition 20, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 19.0 in stage 8.0 (TID 74) in 17 ms on 10.42.0.133 (executor 1) (20/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 21.0 in stage 8.0 (TID 76) (10.42.0.133,executor 1, partition 21, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 20.0 in stage 8.0 (TID 75) in 18 ms on 10.42.0.133 (executor 1) (21/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 22.0 in stage 8.0 (TID 77) (10.42.0.133,executor 1, partition 22, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 21.0 in stage 8.0 (TID 76) in 28 ms on 10.42.0.133 (executor 1) (22/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 23.0 in stage 8.0 (TID 78) (10.42.0.133,executor 1, partition 23, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 22.0 in stage 8.0 (TID 77) in 31 ms on 10.42.0.133 (executor 1) (23/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 24.0 in stage 8.0 (TID 79) (10.42.0.133,executor 1, partition 24, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 23.0 in stage 8.0 (TID 78) in 20 ms on 10.42.0.133 (executor 1) (24/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 25.0 in stage 8.0 (TID 80) (10.42.0.133,executor 1, partition 25, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 24.0 in stage 8.0 (TID 79) in 22 ms on 10.42.0.133 (executor 1) (25/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 26.0 in stage 8.0 (TID 81) (10.42.0.133,executor 1, partition 26, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 25.0 in stage 8.0 (TID 80) in 19 ms on 10.42.0.133 (executor 1) (26/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 27.0 in stage 8.0 (TID 82) (10.42.0.133,executor 1, partition 27, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 26.0 in stage 8.0 (TID 81) in 20 ms on 10.42.0.133 (executor 1) (27/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 28.0 in stage 8.0 (TID 83) (10.42.0.133,executor 1, partition 28, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 27.0 in stage 8.0 (TID 82) in 25 ms on 10.42.0.133 (executor 1) (28/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 29.0 in stage 8.0 (TID 84) (10.42.0.133,executor 1, partition 29, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 28.0 in stage 8.0 (TID 83) in 32 ms on 10.42.0.133 (executor 1) (29/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 30.0 in stage 8.0 (TID 85) (10.42.0.133,executor 1, partition 30, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 29.0 in stage 8.0 (TID 84) in 35 ms on 10.42.0.133 (executor 1) (30/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 31.0 in stage 8.0 (TID 86) (10.42.0.133,executor 1, partition 31, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 30.0 in stage 8.0 (TID 85) in 28 ms on 10.42.0.133 (executor 1) (31/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 32.0 in stage 8.0 (TID 87) (10.42.0.133,executor 1, partition 32, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 31.0 in stage 8.0 (TID 86) in 23 ms on 10.42.0.133 (executor 1) (32/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 33.0 in stage 8.0 (TID 88) (10.42.0.133,executor 1, partition 33, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 32.0 in stage 8.0 (TID 87) in 37 ms on 10.42.0.133 (executor 1) (33/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 34.0 in stage 8.0 (TID 89) (10.42.0.133,executor 1, partition 34, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 33.0 in stage 8.0 (TID 88) in 43 ms on 10.42.0.133 (executor 1) (34/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 35.0 in stage 8.0 (TID 90) (10.42.0.133,executor 1, partition 35, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 34.0 in stage 8.0 (TID 89) in 25 ms on 10.42.0.133 (executor 1) (35/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 36.0 in stage 8.0 (TID 91) (10.42.0.133,executor 1, partition 36, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 35.0 in stage 8.0 (TID 90) in 22 ms on 10.42.0.133 (executor 1) (36/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 37.0 in stage 8.0 (TID 92) (10.42.0.133,executor 1, partition 37, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 36.0 in stage 8.0 (TID 91) in 31 ms on 10.42.0.133 (executor 1) (37/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 38.0 in stage 8.0 (TID 93) (10.42.0.133,executor 1, partition 38, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 37.0 in stage 8.0 (TID 92) in 31 ms on 10.42.0.133 (executor 1) (38/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 39.0 in stage 8.0 (TID 94) (10.42.0.133,executor 1, partition 39, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 38.0 in stage 8.0 (TID 93) in 28 ms on 10.42.0.133 (executor 1) (39/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 40.0 in stage 8.0 (TID 95) (10.42.0.133,executor 1, partition 40, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 39.0 in stage 8.0 (TID 94) in 27 ms on 10.42.0.133 (executor 1) (40/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 41.0 in stage 8.0 (TID 96) (10.42.0.133,executor 1, partition 41, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 40.0 in stage 8.0 (TID 95) in 21 ms on 10.42.0.133 (executor 1) (41/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 42.0 in stage 8.0 (TID 97) (10.42.0.133,executor 1, partition 42, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 41.0 in stage 8.0 (TID 96) in 20 ms on 10.42.0.133 (executor 1) (42/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 43.0 in stage 8.0 (TID 98) (10.42.0.133,executor 1, partition 43, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 42.0 in stage 8.0 (TID 97) in 25 ms on 10.42.0.133 (executor 1) (43/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 44.0 in stage 8.0 (TID 99) (10.42.0.133,executor 1, partition 44, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 43.0 in stage 8.0 (TID 98) in 22 ms on 10.42.0.133 (executor 1) (44/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 45.0 in stage 8.0 (TID 100) (10.42.0.133,executor 1, partition 45, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 44.0 in stage 8.0 (TID 99) in 24 ms on 10.42.0.133 (executor 1) (45/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 46.0 in stage 8.0 (TID 101) (10.42.0.133,executor 1, partition 46, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 45.0 in stage 8.0 (TID 100) in 19 ms on 10.42.0.133 (executor 1) (46/50)
+26/01/31 07:18:20 INFO TaskSetManager: Starting task 47.0 in stage 8.0 (TID 102) (10.42.0.133,executor 1, partition 47, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:20 INFO TaskSetManager: Finished task 46.0 in stage 8.0 (TID 101) in 29 ms on 10.42.0.133 (executor 1) (47/50)
+26/01/31 07:18:21 INFO TaskSetManager: Starting task 48.0 in stage 8.0 (TID 103) (10.42.0.133,executor 1, partition 48, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:21 INFO TaskSetManager: Finished task 47.0 in stage 8.0 (TID 102) in 22 ms on 10.42.0.133 (executor 1) (48/50)
+26/01/31 07:18:21 INFO TaskSetManager: Starting task 49.0 in stage 8.0 (TID 104) (10.42.0.133,executor 1, partition 49, PROCESS_LOCAL, 9650 bytes) 
+26/01/31 07:18:21 INFO TaskSetManager: Finished task 48.0 in stage 8.0 (TID 103) in 20 ms on 10.42.0.133 (executor 1) (49/50)
+26/01/31 07:18:21 INFO TaskSetManager: Finished task 49.0 in stage 8.0 (TID 104) in 17 ms on 10.42.0.133 (executor 1) (50/50)
+26/01/31 07:18:21 INFO TaskSchedulerImpl: Removed TaskSet 8.0 whose tasks have all completed, from pool 
+26/01/31 07:18:21 INFO DAGScheduler: ResultStage 8 ($anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128) finished in 1272 ms
+26/01/31 07:18:21 INFO DAGScheduler: Job 4 is finished. Cancelling potential speculative or zombie tasks for this job
+26/01/31 07:18:21 INFO TaskSchedulerImpl: Canceling stage 8
+26/01/31 07:18:21 INFO TaskSchedulerImpl: Killing all running tasks in stage 8: Stage finished
+26/01/31 07:18:21 INFO DAGScheduler: Job 4 finished: $anonfun$recordDeltaOperationInternal$1 at DatabricksLogging.scala:128, took 1313.587633 ms
+26/01/31 07:18:21 INFO CodeGenerator: Code generated in 23.22173 ms
+26/01/31 07:18:21 INFO OptimisticTransaction: [tableId=cda5af67,txnId=5730dd95] Attempting to commit version 4 with 5 actions with Serializable isolation level
+26/01/31 07:18:21 INFO UploadContentProviders: Stream recreated: FileWithOffsetContentProvider{file=/tmp/hadoop-root/s3a/s3ablock-0001-9598113012088723052.tmp, offset=0} BaseContentProvider{size=1691, initiated at 2026-01-31T07:18:21.416498777, streamCreationCount=2, currentStream=null}
+26/01/31 07:18:21 INFO OptimisticTransaction: Incremental commit: starting with snapshot version 3
+26/01/31 07:18:21 INFO DeltaLog: Creating a new snapshot v4 for commit version 4
+26/01/31 07:18:21 INFO DeltaLog: Loading version 4.
+26/01/31 07:18:21 INFO Snapshot: [tableId=cda5af67-75f4-4844-9e03-c64fb4b7d63c] Created snapshot Snapshot(path=s3a://test-bucket/random_data/_delta_log, version=4, metadata=Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)), logSegment=LogSegment(s3a://test-bucket/random_data/_delta_log,4,ArraySeq(S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000000.json; isDirectory=false; length=1747; replication=1; blocksize=33554432; modification_time=1769834260683; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="704a9b8d2f4ae794e381327b57938293" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000001.json; isDirectory=false; length=1688; replication=1; blocksize=33554432; modification_time=1769837802351; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="27c7b294f79974e39dabe90d998084d8" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000002.json; isDirectory=false; length=1689; replication=1; blocksize=33554432; modification_time=1769838115216; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c757824c0373c4ecee484c146e826770" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000003.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769838295924; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c8d6e6618b9e8cdd9a7c8fb89174dc80" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000004.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769843901000; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="65dc04d70a5fbed265a3e45aecdba6d2" versionId=null),org.apache.spark.sql.delta.EmptyCheckpointProvider$@1c5c6f1b,1769843901000), checksumOpt=Some(VersionChecksum(Some(5730dd95-3389-40d3-a8ba-76187cb2955e),200161837,2,None,None,1,1,None,Some(List()),Some(List()),Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)),Protocol(1,2),None,None,Some(List(AddFile(part-00001-530b8592-6cf0-4720-a521-addc8a9e8efb-c000.snappy.parquet,Map(),100080538,1769843899000,false,{"numRecords":5000000,"minValues":{"id":5000000,"v1":6.869017576960346E-10,"v2":-5.085184375617265},"maxValues":{"id":9999999,"v1":0.9999999003064663,"v2":5.863079896105336},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None), AddFile(part-00000-3bd570f5-77b4-493a-82dc-6ea925450da9-c000.snappy.parquet,Map(),100081299,1769843895000,false,{"numRecords":5000000,"minValues":{"id":0,"v1":2.7800966417856898E-8,"v2":-5.054939718131495},"maxValues":{"id":4999999,"v1":0.9999998302491863,"v2":5.157816754285548},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None))))))
+26/01/31 07:18:21 INFO DeltaLog: Updated snapshot to Snapshot(path=s3a://test-bucket/random_data/_delta_log, version=4, metadata=Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)), logSegment=LogSegment(s3a://test-bucket/random_data/_delta_log,4,ArraySeq(S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000000.json; isDirectory=false; length=1747; replication=1; blocksize=33554432; modification_time=1769834260683; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="704a9b8d2f4ae794e381327b57938293" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000001.json; isDirectory=false; length=1688; replication=1; blocksize=33554432; modification_time=1769837802351; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="27c7b294f79974e39dabe90d998084d8" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000002.json; isDirectory=false; length=1689; replication=1; blocksize=33554432; modification_time=1769838115216; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c757824c0373c4ecee484c146e826770" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000003.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769838295924; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="c8d6e6618b9e8cdd9a7c8fb89174dc80" versionId=null, S3AFileStatus{path=s3a://test-bucket/random_data/_delta_log/00000000000000000004.json; isDirectory=false; length=1691; replication=1; blocksize=33554432; modification_time=1769843901000; access_time=0; owner=root; group=root; permission=rw-rw-rw-; isSymlink=false; hasAcl=false; isEncrypted=true; isErasureCoded=false} isEmptyDirectory=FALSE eTag="65dc04d70a5fbed265a3e45aecdba6d2" versionId=null),org.apache.spark.sql.delta.EmptyCheckpointProvider$@1c5c6f1b,1769843901000), checksumOpt=Some(VersionChecksum(Some(5730dd95-3389-40d3-a8ba-76187cb2955e),200161837,2,None,None,1,1,None,Some(List()),Some(List()),Metadata(cda5af67-75f4-4844-9e03-c64fb4b7d63c,null,null,Format(parquet,Map()),{"type":"struct","fields":[{"name":"id","type":"long","nullable":true,"metadata":{}},{"name":"v1","type":"double","nullable":true,"metadata":{}},{"name":"v2","type":"double","nullable":true,"metadata":{}}]},List(),Map(),Some(1769834242947)),Protocol(1,2),None,None,Some(List(AddFile(part-00001-530b8592-6cf0-4720-a521-addc8a9e8efb-c000.snappy.parquet,Map(),100080538,1769843899000,false,{"numRecords":5000000,"minValues":{"id":5000000,"v1":6.869017576960346E-10,"v2":-5.085184375617265},"maxValues":{"id":9999999,"v1":0.9999999003064663,"v2":5.863079896105336},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None), AddFile(part-00000-3bd570f5-77b4-493a-82dc-6ea925450da9-c000.snappy.parquet,Map(),100081299,1769843895000,false,{"numRecords":5000000,"minValues":{"id":0,"v1":2.7800966417856898E-8,"v2":-5.054939718131495},"maxValues":{"id":4999999,"v1":0.9999998302491863,"v2":5.157816754285548},"nullCount":{"id":0,"v1":0,"v2":0}},null,null,None,None,None))))))
+26/01/31 07:18:21 INFO MapPartitionsRDD: Removing RDD 10 from persistence list
+26/01/31 07:18:21 INFO BlockManager: Removing RDD 10
+26/01/31 07:18:21 INFO DeltaLogFileIndex: Created DeltaLogFileIndex(JSON, numFilesInSegment: 5, totalFileSize: 8506)
+26/01/31 07:18:21 INFO OptimisticTransaction: [tableId=cda5af67,txnId=5730dd95] Committed delta #4 to s3a://test-bucket/random_data/_delta_log
+26/01/31 07:18:21 INFO ChecksumHook: Writing checksum file for table path s3a://test-bucket/random_data/_delta_log version 4
+26/01/31 07:18:21 INFO deprecation: org.apache.hadoop.shaded.io.bytes.per.checksum is deprecated. Instead, use dfs.bytes-per-checksum
+26/01/31 07:18:21 INFO CheckpointFileManager: Writing atomically to s3a://test-bucket/random_data/_delta_log/00000000000000000004.crc using temp file s3a://test-bucket/random_data/_delta_log/.00000000000000000004.crc.f5fcf223-5935-4151-81af-7010f124eb95.tmp
+26/01/31 07:18:21 INFO UploadContentProviders: Stream recreated: FileWithOffsetContentProvider{file=/tmp/hadoop-root/s3a/s3ablock-0001-13771939920484279239.tmp, offset=0} BaseContentProvider{size=1491, initiated at 2026-01-31T07:18:21.873132015, streamCreationCount=2, currentStream=null}
+26/01/31 07:18:22 INFO CheckpointFileManager: Renamed temp file s3a://test-bucket/random_data/_delta_log/.00000000000000000004.crc.f5fcf223-5935-4151-81af-7010f124eb95.tmp to s3a://test-bucket/random_data/_delta_log/00000000000000000004.crc
+Write complete in 32.21 seconds.
+26/01/31 07:18:22 INFO SparkContext: SparkContext is stopping with exitCode 0 from stop at NativeMethodAccessorImpl.java:0.
+26/01/31 07:18:22 INFO SparkUI: Stopped Spark web UI at http://spark-dri-ingestion-20260131t071724-7eed179c12e9f287-driver-svc.default.svc:4040
+26/01/31 07:18:22 INFO KubernetesClusterSchedulerBackend: Shutting down all executors
+26/01/31 07:18:22 INFO KubernetesClusterSchedulerBackend$KubernetesDriverEndpoint: Asking each executor to shut down
+26/01/31 07:18:22 INFO ExecutorPodsWatchSnapshotSource: Kubernetes client has been closed.
+26/01/31 07:18:22 INFO MapOutputTrackerMasterEndpoint: MapOutputTrackerMasterEndpoint stopped!
+26/01/31 07:18:22 INFO MemoryStore: MemoryStore cleared
+26/01/31 07:18:22 INFO BlockManager: BlockManager stopped
+26/01/31 07:18:22 INFO BlockManagerMaster: BlockManagerMaster stopped
+26/01/31 07:18:22 INFO OutputCommitCoordinator$OutputCommitCoordinatorEndpoint: OutputCommitCoordinator stopped!
+26/01/31 07:18:22 INFO SparkContext: Successfully stopped SparkContext
+26/01/31 07:18:23 INFO ShutdownHookManager: Shutdown hook called
+26/01/31 07:18:23 INFO ShutdownHookManager: Deleting directory /var/data/spark-25fcf6de-44eb-4409-8d2b-2798aa34b055/spark-6580a1e4-455f-46fb-b445-9f0cb589b639/pyspark-72582905-f20e-4551-913d-31a21abcc697
+26/01/31 07:18:23 INFO ShutdownHookManager: Deleting directory /tmp/spark-89951d95-a6d7-4cf9-9a08-eeadaf1bb3b1
+26/01/31 07:18:23 INFO ShutdownHookManager: Deleting directory /tmp/artifacts-1d7eff94-3cb3-4c49-8959-8ca477122ab3
+26/01/31 07:18:23 INFO ShutdownHookManager: Deleting directory /var/data/spark-25fcf6de-44eb-4409-8d2b-2798aa34b055/spark-6580a1e4-455f-46fb-b445-9f0cb589b639
