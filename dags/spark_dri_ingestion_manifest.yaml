@@ -9,7 +9,6 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: "IfNotPresent"
   mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
-  sparkConfigMap: "spark-config"
   sparkVersion: "4.0.1"
   restartPolicy:
     type: "Never"
@@ -17,6 +16,9 @@ spec:
     - name: "dags-volume"
       persistentVolumeClaim:
         claimName: "airflow-dags-shared-pvc"
+    - name: "spark-config-volume"
+      configMap:
+        name: "spark-config"
   driver:
     cores: 1
     coreLimit: "1200m"
@@ -27,7 +29,11 @@ spec:
     volumeMounts:
       - name: "dags-volume"
         mountPath: "/opt/spark/repo"
+      - name: "spark-config-volume"
+        mountPath: "/etc/spark/conf"
     env:
+      - name: "SPARK_CONF_DIR"
+        value: "/etc/spark/conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
@@ -39,8 +45,11 @@ spec:
     labels:
       version: "4.0.1"
     volumeMounts:
-    # No volume mount needed for config map as sparkConfigMap handles it
+      - name: "spark-config-volume"
+        mountPath: "/etc/spark/conf"
     env:
+      - name: "SPARK_CONF_DIR"
+        value: "/etc/spark/conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
