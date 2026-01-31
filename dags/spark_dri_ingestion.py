@@ -1,7 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 from airflow.utils.dates import days_ago
-from kubernetes.client import models as k8s
+import os
 
 default_args = {
     'owner': 'airflow',
@@ -22,5 +22,5 @@ with DAG(
     submit_job = SparkKubernetesOperator(
         task_id='submit_spark_job',
         namespace='default',
-        application_file="spark_dri_ingestion_manifest.yaml",
+        application_file=os.path.join(os.path.dirname(__file__), "spark_dri_ingestion_manifest.yaml"),
     )
