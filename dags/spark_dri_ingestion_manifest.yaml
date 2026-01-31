@@ -9,6 +9,23 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: "IfNotPresent"
   mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
+  sparkConf:
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
+    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
+    "spark.hadoop.fs.s3a.threads.keepalivetime": "60"
+    "spark.hadoop.fs.s3a.connection.timeout": "200"
+    "spark.hadoop.fs.s3a.connection.establish.timeout": "30"
+    "spark.hadoop.fs.s3a.connection.acquisition.timeout": "60"
+    "spark.hadoop.fs.s3a.multipart.purge.age": "86400"
+    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
+    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    "spark.sql.catalogImplementation": "hive"
+    "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
+    "spark.sql.warehouse.dir": "s3a://warehouse/managed/"
   sparkVersion: "4.0.1"
   restartPolicy:
     type: "Never"
@@ -16,9 +33,6 @@ spec:
     - name: "dags-volume"
       persistentVolumeClaim:
         claimName: "airflow-dags-shared-pvc"
-    - name: "spark-config-volume"
-      configMap:
-        name: "spark-config"
   driver:
     cores: 1
     coreLimit: "1200m"
@@ -29,11 +43,7 @@ spec:
     volumeMounts:
       - name: "dags-volume"
         mountPath: "/opt/spark/repo"
-      - name: "spark-config-volume"
-        mountPath: "/etc/spark/conf"
     env:
-      - name: "SPARK_CONF_DIR"
-        value: "/etc/spark/conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
@@ -44,12 +54,7 @@ spec:
     memory: "12000m"
     labels:
       version: "4.0.1"
-    volumeMounts:
-      - name: "spark-config-volume"
-        mountPath: "/etc/spark/conf"
     env:
-      - name: "SPARK_CONF_DIR"
-        value: "/etc/spark/conf"
       - name: "AWS_ACCESS_KEY_ID"
         value: "minioadmin"
       - name: "AWS_SECRET_ACCESS_KEY"
