@@ -1,0 +1,52 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: "SparkApplication"
+metadata:
+  name: "spark-dri-ingestion-{{ ts_nodash | lower }}"
+  namespace: "default"
+spec:
+  type: "Python"
+  mode: "cluster"
+  image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
+  imagePullPolicy: "IfNotPresent"
+  mainApplicationFile: "local:///opt/spark/repo/scripts/ingest_dri_data.py"
+  sparkVersion: "4.0.1"
+  restartPolicy:
+    type: "Never"
+  volumes:
+    - name: "dags-volume"
+      persistentVolumeClaim:
+        claimName: "airflow-dags-shared-pvc"
+    - name: "spark-config-volume"
+      configMap:
+        name: "spark-config-6ctg8hb4fd"
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "2048m"
+    labels:
+      version: "4.0.1"
+    serviceAccount: "spark-operator-spark"
+    volumeMounts:
+      - name: "dags-volume"
+        mountPath: "/opt/spark/repo"
+      - name: "spark-config-volume"
+        mountPath: "/opt/spark/conf"
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        value: "minioadmin"
+      - name: "AWS_SECRET_ACCESS_KEY"
+        value: "minioadmin"
+  executor:
+    cores: 1
+    instances: 1
+    memory: "12000m"
+    labels:
+      version: "4.0.1"
+    volumeMounts:
+      - name: "spark-config-volume"
+        mountPath: "/opt/spark/conf"
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        value: "minioadmin"
+      - name: "AWS_SECRET_ACCESS_KEY"
+        value: "minioadmin"
