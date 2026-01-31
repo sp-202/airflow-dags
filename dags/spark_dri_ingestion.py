@@ -12,7 +12,7 @@ default_args = {
 }
 
 with DAG(
-    'spark_dri_ingestion',
+    'spark_dri_ingestion_v2',
     default_args=default_args,
     description='Spark DRI Ingestion DAG',
     schedule_interval=None,
