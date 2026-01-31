@@ -8,11 +8,6 @@ spec:
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: "IfNotPresent"
-  sparkConf:
-    "spark.hadoop.fs.s3a.connection.timeout": "60000"
-    "spark.hadoop.fs.s3a.socket.timeout": "60000"
-    "spark.hadoop.fs.s3a.connection.establish.timeout": "60000"
-    "spark.hadoop.fs.s3a.attempts.maximum": "10"
   mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   restartPolicy:
@@ -23,7 +18,7 @@ spec:
         claimName: "airflow-dags-shared-pvc"
     - name: "spark-config-volume"
       configMap:
-        name: "spark-config-6ctg8hb4fd"
+        name: "spark-config"
   driver:
     cores: 1
     coreLimit: "1200m"
