@@ -8,7 +8,7 @@ spec:
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-fix-v4-mssql-opt"
   imagePullPolicy: "IfNotPresent"
-  mainApplicationFile: "local:///opt/spark/repo/scripts/ingest_dri_data.py"
+  mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
   sparkVersion: "4.0.1"
   restartPolicy:
     type: "Never"
