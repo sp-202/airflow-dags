@@ -1,0 +1,80 @@
+apiVersion: "sparkoperator.k8s.io/v1beta2"
+kind: "SparkApplication"
+metadata:
+  name: "random-delta-gen-{{ ts_nodash | lower }}"
+  namespace: "default"
+spec:
+  type: "Python"
+  mode: "cluster"
+  image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
+  imagePullPolicy: "Always"
+  # Assuming PVC 'airflow-dags-shared-pvc' is mounted at /opt/spark/repo
+  # and contains the contents of 'airflow-dags' directory (which includes 'scripts').
+  mainApplicationFile: "local:///opt/spark/repo/scripts/random_delta_gen_v2.py"
+  deps:
+    packages:
+      - "org.apache.hadoop:hadoop-aws:3.3.4"
+      - "com.amazonaws:aws-java-sdk-bundle:1.12.262"
+      - "io.delta:delta-spark_2.12:3.0.0" 
+      # Note: Adjust delta version if needed for Spark 4.0. Spark 4.0 might need Delta 3.x or 4.x preview. 
+      # But existing manifest used standard image. We act as if image handles delta, but we add hadoop-aws just in case.
+      # If the image already has delta, we don't need to add it here, but adding it ensures we have it.
+      # However, mixing provided jars and downloaded jars can be tricky.
+      # Given the user's error is strictly "ClassNotFoundException: org.apache.hadoop.fs.s3a...", we focus on that.
+  sparkConf:
+    "spark.hadoop.fs.s3a.path.style.access": "true"
+    "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.EnvironmentVariableCredentialsProvider"
+    "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
+    "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
+    "spark.sql.catalogImplementation": "hive"
+    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
+    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
+    "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
+  sparkConfigMap: "spark-config"
+  sparkVersion: "4.0.1"
+  restartPolicy:
+    type: "Never"
+  volumes:
+    - name: "dags-volume"
+      persistentVolumeClaim:
+        claimName: "airflow-dags-shared-pvc"
+  driver:
+    cores: 1
+    coreLimit: "1200m"
+    memory: "2048m"
+    labels:
+      version: "4.0.1"
+    serviceAccount: "spark-operator-spark"
+    volumeMounts:
+      - name: "dags-volume"
+        mountPath: "/opt/spark/repo"
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        valueFrom:
+          secretKeyRef:
+            name: "spark-s3-credentials"
+            key: "AWS_ACCESS_KEY_ID"
+      - name: "AWS_SECRET_ACCESS_KEY"
+        valueFrom:
+          secretKeyRef:
+            name: "spark-s3-credentials"
+            key: "AWS_SECRET_ACCESS_KEY"
+  executor:
+    cores: 1
+    instances: 1
+    memory: "12000m"
+    labels:
+      version: "4.0.1"
+    env:
+      - name: "AWS_ACCESS_KEY_ID"
+        valueFrom:
+          secretKeyRef:
+            name: "spark-s3-credentials"
+            key: "AWS_ACCESS_KEY_ID"
+      - name: "AWS_SECRET_ACCESS_KEY"
+        valueFrom:
+          secretKeyRef:
+            name: "spark-s3-credentials"
+            key: "AWS_SECRET_ACCESS_KEY"
