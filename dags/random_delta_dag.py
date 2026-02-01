@@ -12,7 +12,7 @@ default_args = {
 }
 
 with DAG(
-    'random_delta_ingestion_v1',
+    'random_delta_ingestion_v2',
     default_args=default_args,
     description='Random Delta Data Generation DAG',
     schedule_interval=None,
