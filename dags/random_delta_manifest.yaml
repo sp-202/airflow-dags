@@ -8,7 +8,8 @@ spec:
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "Always"
-  mainApplicationFile: "local:///opt/spark/repo/repo/scripts/random_delta_gen_v2.py"
+
+  mainApplicationFile: "local:///opt/spark/repo/.worktrees/*/scripts/random_delta_gen_v2.py"
 
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
@@ -32,6 +33,7 @@ spec:
 
   sparkConfigMap: "spark-config"
   sparkVersion: "4.0.1"
+
   restartPolicy:
     type: "Never"
 
