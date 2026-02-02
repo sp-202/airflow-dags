@@ -11,7 +11,7 @@ spec:
   imagePullPolicy: "IfNotPresent"
 
   # ✅ MUST point to git-sync symlink (NOT .worktrees, NOT *)
-  mainApplicationFile: "local:///opt/spark/repo/repo/scripts/random_delta_gen_v2.py"
+  mainApplicationFile: "local:///opt/spark/repo/scripts/random_delta_gen_v2.py"
 
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
