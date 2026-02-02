@@ -10,7 +10,10 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
+  # Point to S3 location mirrored by git-sync
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
+
+  sparkVersion: "4.0.1"
 
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
@@ -27,10 +30,7 @@ spec:
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
 
-  volumes:
-    - name: "dags-volume"
-      persistentVolumeClaim:
-        claimName: "airflow-dags-shared-pvc"
+
 
   driver:
     cores: 1
@@ -39,9 +39,6 @@ spec:
     labels:
       version: "4.0.1"
     serviceAccount: "spark-operator-spark"
-    volumeMounts:
-      - name: "dags-volume"
-        mountPath: "/dags"
     env:
       - name: HADOOP_CONF_DIR
         value: "/tmp"
@@ -52,9 +49,6 @@ spec:
     memory: "4096m"
     labels:
       version: "4.0.1"
-    volumeMounts:
-      - name: "dags-volume"
-        mountPath: "/dags"
     env:
       - name: HADOOP_CONF_DIR
         value: "/tmp"
