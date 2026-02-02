@@ -10,34 +10,22 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
-  # ✅ MUST point to git-sync symlink under /dags
-  mainApplicationFile: "local:///dags/repo/scripts/random_delta_gen_v2.py"
+  mainApplicationFile: "{{ params.main_application_file }}"  # dynamically injected
 
   sparkConf:
-    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
+    "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
     "spark.hadoop.fs.s3a.secret.key": "minioadmin"
     "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
     "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-    "spark.hadoop.fs.s3a.connection.timeout": "200000"
-    "spark.hadoop.fs.s3a.connection.establish.timeout": "30000"
-    "spark.hadoop.fs.s3a.connection.acquisition.timeout": "60000"
-    "spark.hadoop.fs.s3a.threads.keepalivetime": "60"
-    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
     "spark.sql.catalogImplementation": "hive"
     "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
-
-  sparkConfigMap: "spark-config"
-  sparkVersion: "4.0.1"
-
-  restartPolicy:
-    type: "Never"
 
   volumes:
     - name: "dags-volume"
@@ -52,20 +40,9 @@ spec:
       version: "4.0.1"
     serviceAccount: "spark-operator-spark"
     volumeMounts:
-      # ✅ Mount PVC at /dags, same as git-sync
       - name: "dags-volume"
         mountPath: "/dags"
     env:
-      - name: "AWS_ACCESS_KEY_ID"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_ACCESS_KEY_ID"
-      - name: "AWS_SECRET_ACCESS_KEY"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_SECRET_ACCESS_KEY"
       - name: HADOOP_CONF_DIR
         value: "/tmp"
 
@@ -76,19 +53,8 @@ spec:
     labels:
       version: "4.0.1"
     volumeMounts:
-      # ✅ Mount PVC at /dags, same as driver
       - name: "dags-volume"
         mountPath: "/dags"
     env:
-      - name: "AWS_ACCESS_KEY_ID"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_ACCESS_KEY_ID"
-      - name: "AWS_SECRET_ACCESS_KEY"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_SECRET_ACCESS_KEY"
       - name: HADOOP_CONF_DIR
         value: "/tmp"
