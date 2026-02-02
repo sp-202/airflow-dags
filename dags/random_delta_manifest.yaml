@@ -10,8 +10,8 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
-  # ✅ MUST point to git-sync symlink (NOT .worktrees, NOT *)
-  mainApplicationFile: "local:///opt/spark/repo/scripts/random_delta_gen_v2.py"
+  # ✅ MUST point to git-sync symlink under /dags
+  mainApplicationFile: "local:///dags/repo/scripts/random_delta_gen_v2.py"
 
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
@@ -52,8 +52,9 @@ spec:
       version: "4.0.1"
     serviceAccount: "spark-operator-spark"
     volumeMounts:
+      # ✅ Mount PVC at /dags, same as git-sync
       - name: "dags-volume"
-        mountPath: "/opt/spark/repo"
+        mountPath: "/dags"
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:
@@ -75,8 +76,9 @@ spec:
     labels:
       version: "4.0.1"
     volumeMounts:
+      # ✅ Mount PVC at /dags, same as driver
       - name: "dags-volume"
-        mountPath: "/opt/spark/repo"
+        mountPath: "/dags"
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:
