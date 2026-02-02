@@ -10,10 +10,10 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
-  mainApplicationFile: "local:///dags/repo/scripts/random_delta_gen_v2.py"
+  mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
 
   sparkConf:
-    "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
+    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
     "spark.hadoop.fs.s3a.secret.key": "minioadmin"
     "spark.hadoop.fs.s3a.path.style.access": "true"
