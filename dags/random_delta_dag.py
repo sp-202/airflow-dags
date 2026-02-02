@@ -24,7 +24,8 @@ with DAG(
     # Load the manifest file content
     manifest_path = os.path.join(os.path.dirname(__file__), "random_delta_manifest.yaml")
     with open(manifest_path, 'r') as f:
-        manifest = yaml.safe_load(f)
+        manifest_content = f.read()
+    manifest = yaml.safe_load(manifest_content)
 
     submit_job = SparkKubernetesOperator(
         task_id='submit_random_delta_job',
