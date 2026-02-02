@@ -21,11 +21,53 @@ with DAG(
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
-    # Load the manifest file content
-    manifest_path = os.path.join(os.path.dirname(__file__), "random_delta_manifest.yaml")
-    with open(manifest_path, 'r') as f:
-        manifest_content = f.read()
-    manifest = yaml.safe_load(manifest_content)
+    # Embedded manifest to avoid runtime parsing issues
+    manifest = {
+        "apiVersion": "sparkoperator.k8s.io/v1beta2",
+        "kind": "SparkApplication",
+        "metadata": {
+            "name": "random-delta-gen-{{ ts_nodash | lower }}",
+            "namespace": "default"
+        },
+        "spec": {
+            "type": "Python",
+            "mode": "cluster",
+            "image": "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars",
+            "imagePullPolicy": "IfNotPresent",
+            "mainApplicationFile": "s3a://dags/scripts/random_delta_gen_v2.py",
+            "sparkVersion": "4.0.1",
+            "sparkConf": {
+                "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000",
+                "spark.hadoop.fs.s3a.access.key": "minioadmin",
+                "spark.hadoop.fs.s3a.secret.key": "minioadmin",
+                "spark.hadoop.fs.s3a.path.style.access": "true",
+                "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
+                "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem",
+                "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider",
+                "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse",
+                "spark.sql.catalogImplementation": "hive",
+                "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+                "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog",
+                "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083",
+                "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
+            },
+            "driver": {
+                "cores": 1,
+                "coreLimit": "1200m",
+                "memory": "1024m",
+                "labels": {"version": "4.0.1"},
+                "serviceAccount": "spark-operator-spark",
+                "env": [{"name": "HADOOP_CONF_DIR", "value": "/tmp"}]
+            },
+            "executor": {
+                "cores": 1,
+                "instances": 1,
+                "memory": "4096m",
+                "labels": {"version": "4.0.1"},
+                "env": [{"name": "HADOOP_CONF_DIR", "value": "/tmp"}]
+            }
+        }
+    }
 
     submit_job = SparkKubernetesOperator(
         task_id='submit_random_delta_job',
