@@ -28,18 +28,21 @@ spec:
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
+
   sparkConfigMap: "spark-config"
   sparkVersion: "4.0.1"
   restartPolicy:
     type: "Never"
+
   volumes:
     - name: "dags-volume"
       persistentVolumeClaim:
         claimName: "airflow-dags-shared-pvc"
+
   driver:
     cores: 1
     coreLimit: "1200m"
-    memory: "2048m"
+    memory: "1024m"
     labels:
       version: "4.0.1"
     serviceAccount: "spark-operator-spark"
@@ -59,12 +62,16 @@ spec:
             key: "AWS_SECRET_ACCESS_KEY"
       - name: HADOOP_CONF_DIR
         value: "/tmp"
+
   executor:
     cores: 1
     instances: 1
-    memory: "12000m"
+    memory: "4096m"
     labels:
       version: "4.0.1"
+    volumeMounts:
+      - name: "dags-volume"
+        mountPath: "/opt/spark/repo"
     env:
       - name: "AWS_ACCESS_KEY_ID"
         valueFrom:
