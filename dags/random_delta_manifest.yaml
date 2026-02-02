@@ -10,7 +10,7 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
-  mainApplicationFile: "{{ params.main_application_file }}"  # dynamically injected
+  mainApplicationFile: "local:///dags/repo/scripts/random_delta_gen_v2.py"
 
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
