@@ -29,6 +29,9 @@ spec:
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.sql.catalogImplementation": "hive"
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
+    "spark.eventLog.enabled": "true"
+    "spark.eventLog.dir": "s3a://spark-logs/"
+    "spark.history.fs.logDirectory": "s3a://spark-logs/"
 
   driver:
     cores: 1
