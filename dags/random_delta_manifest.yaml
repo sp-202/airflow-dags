@@ -16,7 +16,7 @@ spec:
     ingressAnnotations:
       kubernetes.io/ingress.class: traefik
     ingress: true
-    ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
+    # ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
