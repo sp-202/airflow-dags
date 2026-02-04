@@ -9,6 +9,14 @@ spec:
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
   sparkVersion: "4.0.1"
   sparkConfigMap: "spark-production-defaults"
+  sparkUIOptions:
+    servicePort: 4040
+    servicePortName: spark-driver-ui-port
+    serviceType: ClusterIP
+    ingressAnnotations:
+      kubernetes.io/ingress.class: traefik
+    ingress: true
+    ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
