@@ -24,31 +24,24 @@ spec:
       kubernetes.io/ingress.class: traefik
     ingress: true
     # ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
-  sparkConf:
-    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
-    "spark.hadoop.fs.s3a.access.key": "minioadmin"
-    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
-    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3a.path.style.access": "true"
-    "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
-    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-    "spark.sql.catalogImplementation": "hive"
-    "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
-    "spark.eventLog.enabled": "true"
-    "spark.eventLog.dir": "s3a://spark-logs/"
-    "spark.history.fs.logDirectory": "s3a://spark-logs/"
-
+  
+  # Inject Global Defaults via Mount (Fixes the "Ignored Defaults" issue)
+  volumes:
+    - name: spark-defaults
+      configMap:
+        name: spark-production-defaults
+  
   driver:
     cores: 1
     memory: "1024m"
     serviceAccount: "spark-operator-spark"
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
+    envFrom:
+      - secretRef:
+          name: spark-aws-creds
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
     labels:
       version: "4.0.1"
 
@@ -56,10 +49,12 @@ spec:
     cores: 1
     instances: 1
     memory: "4096m"
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
+    envFrom:
+      - secretRef:
+          name: spark-aws-creds
+    volumeMounts:
+      - name: spark-defaults
+        mountPath: /opt/spark/conf/spark-defaults.conf
+        subPath: spark-defaults.conf
     labels:
       version: "4.0.1"
