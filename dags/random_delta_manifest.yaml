@@ -2,42 +2,34 @@ apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: "SparkApplication"
 metadata:
   name: "random-delta-gen-{{ ts_nodash | lower }}"
-  namespace: "default"
-
 spec:
   type: "Python"
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
-  imagePullPolicy: "IfNotPresent"
-
-  # Point to S3 location mirrored by git-scloud-native-bigdata-stackync
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
-
   sparkVersion: "4.0.1"
-
   sparkConfigMap: "spark-production-defaults"
-  sparkConf:
-    "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
-
-
 
   driver:
     cores: 1
-    coreLimit: "1200m"
     memory: "1024m"
-    labels:
-      version: "4.0.1"
     serviceAccount: "spark-operator-spark"
     env:
-      - name: HADOOP_CONF_DIR
-        value: "/tmp"
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
+    labels:
+      version: "4.0.1"
 
   executor:
     cores: 1
     instances: 1
     memory: "4096m"
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
     labels:
       version: "4.0.1"
-    env:
-      - name: HADOOP_CONF_DIR
-        value: "/tmp"
