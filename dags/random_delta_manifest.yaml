@@ -18,6 +18,7 @@ spec:
   sparkConfigMap: "spark-production-defaults"
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
+    "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
     "spark.hadoop.fs.s3a.secret.key": "minioadmin"
     "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
