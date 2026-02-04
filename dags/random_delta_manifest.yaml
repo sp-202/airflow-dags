@@ -10,26 +10,13 @@ spec:
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
   imagePullPolicy: "IfNotPresent"
 
-  # Point to S3 location mirrored by git-sync
+  # Point to S3 location mirrored by git-scloud-native-bigdata-stackync
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
 
   sparkVersion: "4.0.1"
 
+  sparkConfigMap: "spark-production-defaults"
   sparkConf:
-    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
-    "spark.hadoop.fs.s3a.access.key": "minioadmin"
-    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
-    "spark.hadoop.fs.s3a.path.style.access": "true"
-    "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
-    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-    "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
-    "spark.sql.catalogImplementation": "hive"
-    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
-    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-    "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
 
 
