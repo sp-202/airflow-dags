@@ -21,10 +21,11 @@ spec:
     "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.access.key": "minioadmin"
     "spark.hadoop.fs.s3a.secret.key": "minioadmin"
-    "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
+    "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"`
     "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
-    "spark.sql.defaultCatalog": ""
+    "spark.sql.defaultCatalog": "spark_catalog"
+    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
 
 
 
