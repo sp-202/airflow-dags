@@ -6,6 +6,13 @@ spec:
   type: "Python"
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
+  restartPolicy:
+    type: OnFailure
+    onFailureRetries: 3
+    onFailureRetryInterval: 10
+    onSubmissionFailureRetries: 5
+    onSubmissionFailureRetryInterval: 20
+  # timeToLiveSeconds: 3600 # Keep finished pods for 1 hour for debugging
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
   sparkVersion: "4.0.1"
   sparkConfigMap: "spark-production-defaults"
