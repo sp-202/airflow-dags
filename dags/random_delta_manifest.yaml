@@ -12,7 +12,7 @@ spec:
     onFailureRetryInterval: 10
     onSubmissionFailureRetries: 5
     onSubmissionFailureRetryInterval: 20
-  # timeToLiveSeconds: 3600 # Keep finished pods for 1 hour for debugging
+  timeToLiveSeconds: 3600 # Keep finished pods for 1 hour for debugging
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
   sparkVersion: "4.0.1"
   sparkConfigMap: "spark-production-defaults"
