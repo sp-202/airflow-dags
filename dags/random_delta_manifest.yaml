@@ -20,9 +20,11 @@ spec:
     servicePort: 4040
     servicePortName: spark-driver-ui-port
     serviceType: ClusterIP
-    ingressAnnotations:
-      kubernetes.io/ingress.class: traefik
-    ingress: true
+    # serviceType: ClusterIP
+    # Ingress options removed due to CRD validation error
+    # ingressAnnotations:
+    #   kubernetes.io/ingress.class: traefik
+    # ingress: true
     # ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
   
   sparkConf:
