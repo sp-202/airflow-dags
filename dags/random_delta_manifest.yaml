@@ -24,6 +24,7 @@ spec:
     "spark.hadoop.fs.s3n.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
     "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
+    "spark.sql.defaultCatalog": ""
 
 
 
