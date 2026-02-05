@@ -1,77 +1,47 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: "SparkApplication"
 metadata:
-  name: "spark-dri-ingestion-{{ ts_nodash | lower }}"
-  namespace: "default"
+  name: "random-delta-gen-{{ ts_nodash | lower }}"
 spec:
   type: "Python"
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
-  imagePullPolicy: "Always"
-  mainApplicationFile: "local:///opt/spark/repo/repo/scripts/ingest_dri_data.py"
+  mainApplicationFile: "s3a://dags/scripts/ingest_dri_data.py"
+  sparkVersion: "4.0.1"
+  sparkConfigMap: "spark-production-defaults"
   sparkConf:
+    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
+    "spark.hadoop.fs.s3a.access.key": "minioadmin"
+    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
+    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.auth.EnvironmentVariableCredentialsProvider"
-    "spark.hadoop.fs.s3a.endpoint": "{{ params.s3_endpoint }}"
-    "spark.hadoop.fs.s3a.connection.timeout": "60"
-    "spark.hadoop.fs.s3a.connection.establish.timeout": "30"
-    "spark.hadoop.fs.s3a.connection.acquisition.timeout": "60"
-    "spark.hadoop.fs.s3a.connection.idle.time": "60"
-    "spark.hadoop.fs.s3a.connection.request.timeout": "60"
-    "spark.hadoop.fs.s3a.connection.ttl": "300"
-    "spark.hadoop.fs.s3a.threads.keepalivetime": "60"
-    "spark.hadoop.fs.s3a.multipart.purge.age": "86400"
-    "spark.sql.warehouse.dir": "s3a://test-bucket/warehouse"
-    "spark.sql.catalogImplementation": "hive"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
     "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+    "spark.sql.catalogImplementation": "hive"
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
-    "spark.kubernetes.driver.annotation.sidecar.istio.io/inject": "false"
-  sparkConfigMap: "spark-config"
-  sparkVersion: "4.0.1"
-  restartPolicy:
-    type: "Never"
-  volumes:
-    - name: "dags-volume"
-      persistentVolumeClaim:
-        claimName: "airflow-dags-shared-pvc"
+
   driver:
     cores: 1
-    coreLimit: "1200m"
-    memory: "2048m"
+    memory: "1024m"
+    serviceAccount: "spark-operator-spark"
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
     labels:
       version: "4.0.1"
-    serviceAccount: "spark-operator-spark"
-    volumeMounts:
-      - name: "dags-volume"
-        mountPath: "/opt/spark/repo"
-    env:
-      - name: "AWS_ACCESS_KEY_ID"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_ACCESS_KEY_ID"
-      - name: "AWS_SECRET_ACCESS_KEY"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_SECRET_ACCESS_KEY"
+
   executor:
     cores: 1
     instances: 1
-    memory: "12000m"
+    memory: "4096m"
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
     labels:
       version: "4.0.1"
-    env:
-      - name: "AWS_ACCESS_KEY_ID"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_ACCESS_KEY_ID"
-      - name: "AWS_SECRET_ACCESS_KEY"
-        valueFrom:
-          secretKeyRef:
-            name: "spark-s3-credentials"
-            key: "AWS_SECRET_ACCESS_KEY"
-      
