@@ -24,7 +24,7 @@ with DAG(
     submit_job = SparkKubernetesOperator(
         task_id='submit_random_delta_job',
         namespace='default',
-        application_file="random_delta_manifest.yaml",
+        application_file="spark_dri_ingestion_manifest.yaml",
         params={
             's3_endpoint': 'http://minio.default.svc.cluster.local:9000'
         }
