@@ -6,48 +6,31 @@ spec:
   type: "Python"
   mode: "cluster"
   image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
-  restartPolicy:
-    type: OnFailure
-    onFailureRetries: 3
-    onFailureRetryInterval: 10
-    onSubmissionFailureRetries: 5
-    onSubmissionFailureRetryInterval: 20
-  timeToLiveSeconds: 3600 # Keep finished pods for 1 hour for debugging
   mainApplicationFile: "s3a://dags/scripts/random_delta_gen_v2.py"
   sparkVersion: "4.0.1"
   sparkConfigMap: "spark-production-defaults"
-  sparkUIOptions:
-    servicePort: 4040
-    servicePortName: spark-driver-ui-port
-    serviceType: ClusterIP
-    # serviceType: ClusterIP
-    # Ingress options removed due to CRD validation error
-    # ingressAnnotations:
-    #   kubernetes.io/ingress.class: traefik
-    # ingress: true
-    # ingressHostFormat: "sparkjob-{{$appName}}.{{$ingressDomain}}"
-  
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
+    "spark.hadoop.fs.s3a.access.key": "minioadmin"
+    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
     "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider,org.apache.hadoop.fs.s3a.auth.EnvironmentVariableCredentialsProvider"
+    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
     "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
     "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
     "spark.sql.catalogImplementation": "hive"
     "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
-    "spark.eventLog.enabled": "true"
-    "spark.eventLog.dir": "s3a://spark-logs/"
-    "spark.history.fs.logDirectory": "s3a://spark-logs/"
 
   driver:
     cores: 1
     memory: "1024m"
     serviceAccount: "spark-operator-spark"
-    envFrom:
-      - secretRef:
-          name: spark-aws-creds
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
     labels:
       version: "4.0.1"
 
@@ -55,8 +38,10 @@ spec:
     cores: 1
     instances: 1
     memory: "4096m"
-    envFrom:
-      - secretRef:
-          name: spark-aws-creds
+    env:
+      - name: AWS_ACCESS_KEY_ID
+        value: "minioadmin"
+      - name: AWS_SECRET_ACCESS_KEY
+        value: "minioadmin"
     labels:
       version: "4.0.1"
