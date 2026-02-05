@@ -1,7 +1,7 @@
 apiVersion: "sparkoperator.k8s.io/v1beta2"
 kind: "SparkApplication"
 metadata:
-  name: "random-delta-gen-{{ ts_nodash | lower }}"
+  name: "spark-dri-{{ ts_nodash | lower }}"
 spec:
   type: "Python"
   mode: "cluster"
