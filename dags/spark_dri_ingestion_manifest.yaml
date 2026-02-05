@@ -4,7 +4,6 @@ metadata:
   name: spark-dri-{{ ts_nodash | lower }}
   namespace: default
   labels:
-    # This label helps the operator identify that this CRD needs webhook processing
     sparkoperator.k8s.io/enabled: "true"
 
 spec:
@@ -30,6 +29,7 @@ spec:
     spark.hadoop.hive.metastore.uris: thrift://hive-metastore.default.svc.cluster.local:9083
     spark.sql.warehouse.dir: s3a://test-bucket/warehouse
 
+  # Define the volume once at the spec level
   volumes:
     - name: spark-config-volume
       configMap:
@@ -41,20 +41,18 @@ spec:
     serviceAccount: spark-operator-spark
     labels:
       version: "4.0.1"
-      # Explicitly labeling the driver role often triggers specific webhook logic
       sparkoperator.k8s.io/spark-role: driver
     volumeMounts:
       - name: spark-config-volume
-        mountPath: /opt/spark/conf
-    # The Webhook uses this block to patch the resulting Pod spec
+        mountPath: /etc/spark/conf # Changed path to avoid conflict
     envFrom:
       - secretRef:
           name: mssql-db-credentials
     env:
       - name: HADOOP_CONF_DIR
-        value: /opt/spark/conf
+        value: /etc/spark/conf
       - name: SPARK_CONF_DIR
-        value: /opt/spark/conf
+        value: /etc/spark/conf
 
   executor:
     cores: 1
@@ -65,12 +63,12 @@ spec:
       sparkoperator.k8s.io/spark-role: executor
     volumeMounts:
       - name: spark-config-volume
-        mountPath: /opt/spark/conf
+        mountPath: /etc/spark/conf # Changed path to avoid conflict
     envFrom:
       - secretRef:
           name: mssql-db-credentials
     env:
       - name: HADOOP_CONF_DIR
-        value: /opt/spark/conf
+        value: /etc/spark/conf
       - name: SPARK_CONF_DIR
-        value: /opt/spark/conf
+        value: /etc/spark/conf
