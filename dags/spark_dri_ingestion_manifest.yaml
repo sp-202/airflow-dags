@@ -31,7 +31,7 @@ spec:
   volumes:
     - name: spark-config-volume
       configMap:
-        name: spark-configs
+        name: spark-production-defaults
 
   driver:
     cores: 1
