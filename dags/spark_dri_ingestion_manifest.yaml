@@ -3,6 +3,9 @@ kind: SparkApplication
 metadata:
   name: spark-dri-{{ ts_nodash | lower }}
   namespace: default
+  labels:
+    # This label helps the operator identify that this CRD needs webhook processing
+    sparkoperator.k8s.io/enabled: "true"
 
 spec:
   type: Python
@@ -18,11 +21,9 @@ spec:
     spark.hadoop.fs.s3a.access.key: minioadmin
     spark.hadoop.fs.s3a.secret.key: minioadmin
     spark.hadoop.fs.s3a.path.style.access: "true"
-    # Note: Use bare strings or quotes as needed for your operator version
     spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
     spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
     spark.hadoop.fs.s3a.aws.credentials.provider: org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
-
     spark.sql.extensions: io.delta.sql.DeltaSparkSessionExtension
     spark.sql.catalog.spark_catalog: org.apache.spark.sql.delta.catalog.DeltaCatalog
     spark.sql.catalogImplementation: hive
@@ -40,10 +41,12 @@ spec:
     serviceAccount: spark-operator-spark
     labels:
       version: "4.0.1"
+      # Explicitly labeling the driver role often triggers specific webhook logic
+      sparkoperator.k8s.io/spark-role: driver
     volumeMounts:
       - name: spark-config-volume
         mountPath: /opt/spark/conf
-    # --- Added Secret Injection ---
+    # The Webhook uses this block to patch the resulting Pod spec
     envFrom:
       - secretRef:
           name: mssql-db-credentials
@@ -59,10 +62,10 @@ spec:
     memory: "4096m"
     labels:
       version: "4.0.1"
+      sparkoperator.k8s.io/spark-role: executor
     volumeMounts:
       - name: spark-config-volume
         mountPath: /opt/spark/conf
-    # --- Added Secret Injection ---
     envFrom:
       - secretRef:
           name: mssql-db-credentials
