@@ -18,6 +18,7 @@ spec:
     spark.hadoop.fs.s3a.access.key: minioadmin
     spark.hadoop.fs.s3a.secret.key: minioadmin
     spark.hadoop.fs.s3a.path.style.access: "true"
+    # Note: Use bare strings or quotes as needed for your operator version
     spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
     spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
     spark.hadoop.fs.s3a.aws.credentials.provider: org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
@@ -42,6 +43,10 @@ spec:
     volumeMounts:
       - name: spark-config-volume
         mountPath: /opt/spark/conf
+    # --- Added Secret Injection ---
+    envFrom:
+      - secretRef:
+          name: mssql-db-credentials
     env:
       - name: HADOOP_CONF_DIR
         value: /opt/spark/conf
@@ -57,6 +62,10 @@ spec:
     volumeMounts:
       - name: spark-config-volume
         mountPath: /opt/spark/conf
+    # --- Added Secret Injection ---
+    envFrom:
+      - secretRef:
+          name: mssql-db-credentials
     env:
       - name: HADOOP_CONF_DIR
         value: /opt/spark/conf
