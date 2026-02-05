@@ -2,38 +2,41 @@ import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, abs as spark_abs
 
-# ------------------------------------------------------------------------------
-# 1. CREDENTIALS RECONSTRUCTION (From K8s Secrets)
-# ------------------------------------------------------------------------------
-db_host = os.getenv("DB_HOST")
-db_port = os.getenv("DB_PORT", "1433")
-db_name = os.getenv("DB_NAME")
-db_user = os.getenv("DB_USER")
-db_pass = os.getenv("DB_PASS")
+# --- 1. SAFE CREDENTIAL LOADING ---
+def get_env_var(name, default=None):
+    value = os.getenv(name, default)
+    if value is None:
+        # Log which one is missing for easier debugging in Airflow logs
+        print(f"CRITICAL: Environment variable {name} is MISSING!")
+        return "" # Return empty string to prevent NullPointerException in Java
+    return value
 
-# Build JDBC URL with modern security parameters for Spark 4.0
+db_host = get_env_var("DB_HOST")
+db_port = get_env_var("DB_PORT", "1433")
+db_name = get_env_var("DB_NAME")
+db_user = get_env_var("DB_USER")
+db_pass = get_env_var("DB_PASS")
+
+# --- 2. JDBC CONFIGURATION ---
 jdbc_url = (
     f"jdbc:sqlserver://{db_host}:{db_port};"
     f"databaseName={db_name};"
     "encrypt=true;"
-    "trustServerCertificate=true;"
+    "trustServerCertificate=true"
 )
 
 jdbc_props = {
     "user": db_user,
     "password": db_pass,
     "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-    "fetchsize": "10000" # Optimized for bulk reads
+    "fetchsize": "10000"
 }
 
-# ------------------------------------------------------------------------------
-# 2. SPARK SESSION INITIALIZATION
-# ------------------------------------------------------------------------------
-# Configured via the YAML's configMap, so we just getOrCreate here
-spark = SparkSession.builder \
-    .appName(f"DRI_Ingestion_{db_name}") \
-    .enableHiveSupport() \
-    .getOrCreate()
+# --- 3. SESSION & LOGIC ---
+spark = SparkSession.builder.appName("DRI_Output_Processing").getOrCreate()
+
+# Debug: Print the keys found (NEVER print the password)
+print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
 
 # ------------------------------------------------------------------------------
 # 3. MSSQL DATA INGESTION (JDBC)
