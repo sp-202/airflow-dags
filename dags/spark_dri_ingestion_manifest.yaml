@@ -26,7 +26,7 @@ spec:
     spark.sql.catalog.spark_catalog: org.apache.spark.sql.delta.catalog.DeltaCatalog
     spark.sql.catalogImplementation: hive
     spark.hadoop.hive.metastore.uris: thrift://hive-metastore.default.svc.cluster.local:9083
-    spark.sql.warehouse.dir: s3a://dri-data/warehouse
+    spark.sql.warehouse.dir: s3a://test-bucket/warehouse
 
   volumes:
     - name: spark-config-volume
