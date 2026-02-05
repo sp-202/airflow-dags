@@ -39,7 +39,7 @@ tables_df = spark.read.jdbc(
     properties=jdbc_props
 )
 
-tables_df.show(truncate=False)
+# tables_df.show(truncate=False)
 
 # ------------------------------------------------------------------------------
 # Item Ledger Entry (DRI only)
@@ -80,7 +80,7 @@ ledger_df = ledger_df.withColumn(
     .otherwise("Unknown")
 )
 
-ledger_df.show()
+# ledger_df.show()
 
 # ------------------------------------------------------------------------------
 # Item master
@@ -99,7 +99,7 @@ item_df = spark.read.jdbc(
     properties=jdbc_props
 )
 
-item_df.show(truncate=False)
+# item_df.show(truncate=False)
 
 # ------------------------------------------------------------------------------
 # Join ledger with item master
@@ -137,7 +137,7 @@ dri_output = (
     )
 )
 
-dri_output.show(truncate=False)
+# dri_output.show(truncate=False)
 
 # ------------------------------------------------------------------------------
 # Delta write to S3
