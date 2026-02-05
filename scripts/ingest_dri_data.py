@@ -142,8 +142,8 @@ dri_output.show(truncate=False)
 # ------------------------------------------------------------------------------
 # Delta write to S3
 # ------------------------------------------------------------------------------
-s3_delta_path = "s3://dri-data/bronze/dri_output"
-s3_checkpoint_path = "s3://dri-data/checkpoint/dri_output"
+s3_delta_path = "s3a://dri-data/bronze/dri_output"
+s3_checkpoint_path = "s3a://dri-data/checkpoint/dri_output"
 
 (
     dri_output

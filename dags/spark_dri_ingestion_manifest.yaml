@@ -1,47 +1,64 @@
-apiVersion: "sparkoperator.k8s.io/v1beta2"
-kind: "SparkApplication"
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
 metadata:
-  name: "spark-dri-{{ ts_nodash | lower }}"
+  name: spark-dri-{{ ts_nodash | lower }}
+  namespace: default
+
 spec:
-  type: "Python"
-  mode: "cluster"
-  image: "subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars"
-  mainApplicationFile: "s3a://dags/scripts/ingest_dri_data.py"
+  type: Python
+  mode: cluster
+  image: subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars
+  imagePullPolicy: IfNotPresent
   sparkVersion: "4.0.1"
-  sparkConfigMap: "spark-production-defaults"
+
+  mainApplicationFile: s3a://dags/scripts/ingest_dri_data.py
+
   sparkConf:
-    "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
-    "spark.hadoop.fs.s3a.access.key": "minioadmin"
-    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
-    "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
-    "spark.hadoop.fs.s3a.path.style.access": "true"
-    "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
-    "spark.hadoop.fs.s3a.aws.credentials.provider": "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider"
-    "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension"
-    "spark.sql.catalog.spark_catalog": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
-    "spark.sql.catalogImplementation": "hive"
-    "spark.hadoop.hive.metastore.uris": "thrift://hive-metastore.default.svc.cluster.local:9083"
+    spark.hadoop.fs.s3a.endpoint: http://minio.default.svc.cluster.local:9000
+    spark.hadoop.fs.s3a.access.key: minioadmin
+    spark.hadoop.fs.s3a.secret.key: minioadmin
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+    spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+    spark.hadoop.fs.s3a.aws.credentials.provider: org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
+
+    spark.sql.extensions: io.delta.sql.DeltaSparkSessionExtension
+    spark.sql.catalog.spark_catalog: org.apache.spark.sql.delta.catalog.DeltaCatalog
+    spark.sql.catalogImplementation: hive
+    spark.hadoop.hive.metastore.uris: thrift://hive-metastore.default.svc.cluster.local:9083
+    spark.sql.warehouse.dir: s3a://dri-data/warehouse
+
+  volumes:
+    - name: spark-config-volume
+      configMap:
+        name: spark-configs
 
   driver:
     cores: 1
     memory: "1024m"
-    serviceAccount: "spark-operator-spark"
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
+    serviceAccount: spark-operator-spark
     labels:
       version: "4.0.1"
+    volumeMounts:
+      - name: spark-config-volume
+        mountPath: /opt/spark/conf
+    env:
+      - name: HADOOP_CONF_DIR
+        value: /opt/spark/conf
+      - name: SPARK_CONF_DIR
+        value: /opt/spark/conf
 
   executor:
     cores: 1
     instances: 1
     memory: "4096m"
-    env:
-      - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
-      - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
     labels:
       version: "4.0.1"
+    volumeMounts:
+      - name: spark-config-volume
+        mountPath: /opt/spark/conf
+    env:
+      - name: HADOOP_CONF_DIR
+        value: /opt/spark/conf
+      - name: SPARK_CONF_DIR
+        value: /opt/spark/conf
