@@ -1,6 +1,7 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKubernetesSensor
+from airflow.operators.bash import BashOperator # FIXED: Added this import
 from airflow.utils.dates import days_ago
 import os
 
@@ -36,14 +37,17 @@ with DAG(
         namespace='default',
         application_name="{{ task_instance.xcom_pull(task_ids='submit_random_delta_job')['metadata']['name'] }}",
         kubernetes_conn_id='kubernetes_default',
-        attach_log=True,   # <--- THIS FETCHES THE DRIVER LOGS INTO AIRFLOW
+        attach_log=True,   
         poke_interval=20,
         timeout=3600
     )
 
+    # 3. Resource Cleanup (Manual Deletion)
     delete_spark_resource = BashOperator(
         task_id='delete_spark_resource',
+        # Using -n default to match your namespace
         bash_command="kubectl delete sparkapplication {{ task_instance.xcom_pull(task_ids='submit_random_delta_job')['metadata']['name'] }} -n default",
     )
 
+    # Set the execution order
     submit_job >> monitor_job >> delete_spark_resource
