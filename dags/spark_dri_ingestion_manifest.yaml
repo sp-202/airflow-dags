@@ -44,10 +44,11 @@ spec:
       sparkoperator.k8s.io/spark-role: driver
     volumeMounts:
       - name: spark-config-volume
-        mountPath: /etc/spark/conf # Changed path to avoid conflict
+        mountPath: /etc/spark/conf  # Changed path to avoid conflict
     envFrom:
       - secretRef:
           name: mssql-db-credentials
+          
     env:
       - name: HADOOP_CONF_DIR
         value: /etc/spark/conf
