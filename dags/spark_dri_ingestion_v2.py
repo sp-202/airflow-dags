@@ -41,4 +41,9 @@ with DAG(
         timeout=3600
     )
 
-    submit_job >> monitor_job
+    delete_spark_resource = BashOperator(
+    task_id='delete_spark_resource',
+    bash_command="kubectl delete sparkapplication {{ task_instance.xcom_pull(task_ids='submit_random_delta_job')['metadata']['name'] }} -n default",
+    )
+
+    submit_job >> monitor_job >> delete_spark_resource
