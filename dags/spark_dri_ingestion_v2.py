@@ -42,12 +42,5 @@ with DAG(
         timeout=3600
     )
 
-    # 3. Resource Cleanup (Manual Deletion)
-    delete_spark_resource = BashOperator(
-        task_id='delete_spark_resource',
-        # Using -n default to match your namespace
-        bash_command="kubectl delete sparkapplication {{ task_instance.xcom_pull(task_ids='submit_random_delta_job')['metadata']['name'] }} -n default",
-    )
-
     # Set the execution order
-    submit_job >> monitor_job >> delete_spark_resource
+    submit_job >> monitor_job 
