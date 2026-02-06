@@ -33,7 +33,7 @@ spec:
     spark.hadoop.hive.metastore.uris: thrift://hive-metastore.default.svc.cluster.local:9083
     spark.sql.warehouse.dir: s3a://test-bucket/warehouse
     spark.eventLog.enabled: "true"
-    spark.eventLog.dir: "s3a://spark-logs/spark-events"
+    spark.eventLog.dir: "s3a://spark-logs/"
     spark.log.structured.enabled: "true"
 
   # Define the volume once at the spec level
