@@ -89,7 +89,7 @@ incremental_ledger_query = f"""
     WHERE [Entry No_] > {last_entry_no}
 ) t
 """
-ledger_updates_df = spark.read.jdbc(url=jdbc_url, table=incremental_ledger_query, properties=props)
+ledger_updates_df = spark.read.jdbc(url=jdbc_url, table=incremental_ledger_query, properties=jdbc_props)
 
 # 3. Fetch Dimension Data (Item)
 # We need this to get the 'uom' and 'item_description' columns
@@ -102,7 +102,7 @@ item_dim_query = """
     FROM [dbo].[ANRML$Item]
 ) t
 """
-item_df = spark.read.jdbc(url=jdbc_url, table=item_dim_query, properties=props)
+item_df = spark.read.jdbc(url=jdbc_url, table=item_dim_query, properties=jdbc_props)
 
 # 4. Join Fact and Dimension
 # This ensures the schema matches your existing Delta Table
