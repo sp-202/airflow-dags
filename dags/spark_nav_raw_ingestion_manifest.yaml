@@ -1,0 +1,92 @@
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: spark-dri-{{ ts_nodash | lower }}
+  namespace: default
+  labels:
+    sparkoperator.k8s.io/enabled: "true"
+
+spec:
+  successRunHistoryLimit: 1 
+  failureRunHistoryLimit: 1
+  secondsAfterFinished: 60
+  type: Python
+  mode: cluster
+  image: subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars
+  imagePullPolicy: IfNotPresent
+  sparkVersion: "4.0.1"
+
+  mainApplicationFile: s3a://dags/scripts/ingest_nav_data_raw.py
+
+  sparkConf:
+    spark.hadoop.fs.s3a.endpoint: http://minio.default.svc.cluster.local:9000
+    spark.hadoop.fs.s3a.access.key: minioadmin
+    spark.hadoop.fs.s3a.secret.key: minioadmin
+    spark.hadoop.fs.s3a.mkdir.enabled: "true"
+    spark.hadoop.fs.s3a.path.style.access: "true"
+    spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
+    spark.hadoop.fs.s3a.impl: org.apache.hadoop.fs.s3a.S3AFileSystem
+    spark.hadoop.fs.s3a.aws.credentials.provider: org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider
+    spark.sql.extensions: io.delta.sql.DeltaSparkSessionExtension
+    spark.sql.catalog.spark_catalog: org.apache.spark.sql.delta.catalog.DeltaCatalog
+    spark.sql.catalogImplementation: hive
+    spark.hadoop.hive.metastore.uris: thrift://hive-metastore.default.svc.cluster.local:9083
+    spark.sql.warehouse.dir: s3a://test-bucket/warehouse
+    # 1. Standard Event Logging
+    spark.eventLog.enabled: "true"
+    spark.eventLog.dir: "s3a://spark-logs/"
+    # 2. Spark 4.0 Fixes: Disable rolling and structured logging for readable history
+    spark.eventLog.rolling.enabled: "false"
+    spark.log.structured.enabled: "false" 
+    # 3. Naming: Ensure the log file matches your Airflow task name
+    # This prevents the "eventlog_v2_hash" naming style
+    spark.app.name: "spark-dri-{{ ts_nodash | lower }}"
+    # 4. S3A Performance for Logging
+    spark.hadoop.fs.s3a.buffer.dir: "/tmp"
+    spark.hadoop.fs.s3a.fast.upload: "true"
+   
+
+  # Define the volume once at the spec level
+  volumes:
+    - name: spark-config-volume
+      configMap:
+        name: spark-production-defaults
+
+  driver:
+    cores: 1
+    memory: "1024m"
+    serviceAccount: spark-operator-spark
+    labels:
+      version: "4.0.1"
+      sparkoperator.k8s.io/spark-role: driver
+    volumeMounts:
+      - name: spark-config-volume
+        mountPath: /etc/spark/conf  # Changed path to avoid conflict
+    envFrom:
+      - secretRef:
+          name: mssql-db-credentials
+          
+    env:
+      - name: HADOOP_CONF_DIR
+        value: /etc/spark/conf
+      - name: SPARK_CONF_DIR
+        value: /etc/spark/conf
+
+  executor:
+    cores: 1
+    instances: 1
+    memory: "4096m"
+    labels:
+      version: "4.0.1"
+      sparkoperator.k8s.io/spark-role: executor
+    volumeMounts:
+      - name: spark-config-volume
+        mountPath: /etc/spark/conf # Changed path to avoid conflict
+    envFrom:
+      - secretRef:
+          name: mssql-db-credentials
+    env:
+      - name: HADOOP_CONF_DIR
+        value: /etc/spark/conf
+      - name: SPARK_CONF_DIR
+        value: /etc/spark/conf
