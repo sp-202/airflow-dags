@@ -1,135 +1,66 @@
 import os
+import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, abs as spark_abs
 
-# --- 1. SAFE CREDENTIAL LOADING ---
-def get_env_var(name, default=None):
-    value = os.getenv(name, default)
-    if value is None:
-        # Log which one is missing for easier debugging in Airflow logs
-        print(f"CRITICAL: Environment variable {name} is MISSING!")
-        return "" # Return empty string to prevent NullPointerException in Java
-    return value
+# --- 1. SESSION INITIALIZATION ---
+run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+unique_app_name = f"dri-daily-data-{run_id}"
 
-db_host = get_env_var("DB_HOST")
-db_port = get_env_var("DB_PORT", "1433")
-db_name = get_env_var("DB_NAME")
-db_user = get_env_var("DB_USER")
-db_pass = get_env_var("DB_PASS")
+spark = SparkSession.builder \
+    .appName(unique_app_name) \
+    .getOrCreate()
 
-# --- 2. JDBC CONFIGURATION ---
-jdbc_url = (
-    f"jdbc:sqlserver://{db_host}:{db_port};"
-    f"databaseName={db_name};"
-    "encrypt=true;"
-    "trustServerCertificate=true"
-)
+# --- 2. CONFIGURATION ---
+# Source: The raw data dump you just created
+source_table = "nav_raw_data.raw_data"
 
-jdbc_props = {
-    "user": db_user,
-    "password": db_pass,
-    "driver": "com.microsoft.sqlserver.jdbc.SQLServerDriver",
-    "fetchsize": "10000"
-}
+# Target: The DRI specific output table
+target_s3_path = "s3a://dri-data/bronze/dri_output"
+target_table = "dri_db.dri_prod"
 
-# --- 3. SESSION & LOGIC ---
-spark = SparkSession.builder.appName("DRI_Output_Processing").getOrCreate()
+print(f"Reading source data from Delta Table: {source_table}")
 
-# Debug: Print the keys found (NEVER print the password)
-print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
+# --- 3. DATA INGESTION (FROM DELTA) ---
+# Instead of JDBC, we read directly from your S3 Bronze layer
+raw_ledger_df = spark.table(source_table)
 
-# ------------------------------------------------------------------------------
-# 3. MSSQL DATA INGESTION (JDBC)
-# ------------------------------------------------------------------------------
+# --- 4. TRANSFORMATION LOGIC ---
 
-# Ledger Query: Filter at source (SQL Server) to minimize network traffic
-ledger_query = """
-    (
-        SELECT 
-            [Item No_] AS item_no,
-            [Entry No_] AS entry_no,
-            [Posting Date] AS posting_date,
-            [Quantity] AS quantity,
-            [Entry Type] AS entry_type,
-            [Document Type] AS document_type,
-            [Global Dimension 1 Code] AS department,
-            [Global Dimension 2 Code] AS process_center_code
-        FROM [dbo].[ANRML$Item Ledger Entry]
-        WHERE [Global Dimension 1 Code] = 'DRI'
-    ) AS ledger_table
-"""
-
-# Item Query: Basic master data
-item_query = """
-    (
-        SELECT 
-            [No_] AS item_no,
-            [Description] AS item_description,
-            [Base Unit of Measure] AS uom
-        FROM [dbo].[ANRML$Item]
-    ) AS item_table
-"""
-
-print("Reading data from MSSQL...")
-ledger_df = spark.read.jdbc(url=jdbc_url, table=ledger_query, properties=jdbc_props)
-item_df = spark.read.jdbc(url=jdbc_url, table=item_query, properties=jdbc_props)
-
-# ------------------------------------------------------------------------------
-# 4. TRANSFORMATION LOGIC
-# ------------------------------------------------------------------------------
-
-# Map Numeric Entry Types to readable Descriptions
-ledger_df = ledger_df.withColumn(
-    "entry_type_desc",
-    when(col("entry_type") == 0, "Purchase")
-    .when(col("entry_type") == 1, "Sale")
-    .when(col("entry_type") == 2, "Positive Adjmt")
-    .when(col("entry_type") == 3, "Negative Adjmt")
-    .when(col("entry_type") == 4, "Transfer")
-    .when(col("entry_type") == 5, "Consumption")
-    .when(col("entry_type") == 6, "Output")
-    .when(col("entry_type") == 8, "Assembly Consumption")
-    .when(col("entry_type") == 9, "Assembly Output")
-    .otherwise("Unknown")
-)
-
-# Join Ledger with Item Master
-final_df = ledger_df.join(item_df, on="item_no", how="left")
-
-# Filter for Production Output and Sales, Normalize Quantity to Metric Tons
-dri_output = final_df.filter(col("entry_type_desc").isin("Output", "Sale")) \
-    .withColumn("quantity", spark_abs(col("quantity")) / 1000) \
+# 1. Filter for DRI Department first (highly efficient on Delta)
+# 2. Normalize Quantity to Metric Tons
+# 3. Create Product Groups based on Item Descriptions
+dri_output = raw_ledger_df.filter(col("department") == 'DRI') \
+    .filter(col("entry_type_desc").isin("Output", "Sale")) \
+    .withColumn("quantity_mt", spark_abs(col("quantity")) / 1000) \
     .withColumn(
         "product_name",
         when(
             col("item_description").isin(
-                "DRI Lump(A-Grade- Fe(M)-80%)",
-                "DRI Lump(B-Grade-<80%)",
+                "DRI Lump(A-Grade- Fe(M)-80%)", 
+                "DRI Lump(B-Grade-<80%)", 
                 "Iron-ore Lumps"
-            ),
+            ), 
             "DRI Lumps"
         )
         .when(col("item_description") == "Iron-Ore Fines", "DRI Fines")
         .otherwise(col("item_description"))
     )
 
-# ------------------------------------------------------------------------------
-# 5. DELTA WRITE (Production Hardened)
-# ------------------------------------------------------------------------------
-s3_delta_path = "s3a://dri-data/bronze/dri_output"
+# --- 5. PRODUCTION WRITE ---
+print(f"Saving processed DRI data to: {target_s3_path}")
 
-print(f"Saving data to Delta path: {s3_delta_path}...")
+# Ensure the DRI database exists
+spark.sql("CREATE SCHEMA IF NOT EXISTS dri_db")
 
-# overwriteSchema: true -> Fixes the 'item_no' type mismatch by updating Hive
-# mergeSchema: true -> Allows for future column additions automatically
 (
     dri_output.write
     .format("delta")
     .mode("overwrite")
-    .option("path", s3_delta_path)
+    .option("path", target_s3_path)
     .option("overwriteSchema", "true") 
     .option("mergeSchema", "true")
-    .saveAsTable("dri_db.dri_prod")
+    .saveAsTable(target_table)
 )
 
-print("Ingestion Job Completed Successfully.")
+print("DRI Ingestion Job Completed Successfully.")
