@@ -1,7 +1,7 @@
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
-  name: spark-dri-{{ ts_nodash | lower }}
+  name: spark-nav-data-raw-{{ ts_nodash | lower }}
   namespace: default
   labels:
     sparkoperator.k8s.io/enabled: "true"
@@ -40,7 +40,7 @@ spec:
     spark.log.structured.enabled: "false" 
     # 3. Naming: Ensure the log file matches your Airflow task name
     # This prevents the "eventlog_v2_hash" naming style
-    spark.app.name: "spark-dri-{{ ts_nodash | lower }}"
+    spark.app.name: "spark-nav-data-raw-{{ ts_nodash | lower }}"
     # 4. S3A Performance for Logging
     spark.hadoop.fs.s3a.buffer.dir: "/tmp"
     spark.hadoop.fs.s3a.fast.upload: "true"
