@@ -30,9 +30,14 @@ raw_ledger_df = spark.table(source_table)
 # 1. Filter for DRI Department first (highly efficient on Delta)
 # 2. Normalize Quantity to Metric Tons
 # 3. Create Product Groups based on Item Descriptions
-dri_output = raw_ledger_df.filter(col("item_no")isin('FGDRIGRDG1104','FGDRIFNDF1101')) \
-    .filter(col("entry_type_desc").isin("Output", "Sale")) \
-    .withColumn("quantity_mt", spark_abs(col("quantity")) / 1000) \
+dri_output = raw_ledger_df.filter(
+        col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101']) 
+    )
+    .filter(col("entry_type_desc").isin("Output", "Sale"))
+    .withColumn(
+        "quantity_mt",
+        col("quantity") / 1000 
+    )
     .withColumn(
         "product_name",
         when(
@@ -45,7 +50,7 @@ dri_output = raw_ledger_df.filter(col("item_no")isin('FGDRIGRDG1104','FGDRIFNDF1
         )
         .when(col("item_description") == "Iron-Ore Fines", "DRI Fines")
         .otherwise(col("item_description"))
-    )
+)
 
 # --- 5. PRODUCTION WRITE ---
 print(f"Saving processed DRI data to: {target_s3_path}")
