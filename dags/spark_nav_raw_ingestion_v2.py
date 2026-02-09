@@ -35,7 +35,7 @@ with DAG(
     monitor_job = SparkKubernetesSensor(
         task_id='monitor_delta_job',
         namespace='default',
-        application_name="{{ task_instance.xcom_pull(task_ids='submit_random_delta_job')['metadata']['name'] }}",
+        application_name="{{ task_instance.xcom_pull(task_ids='extract_incremantal_data')['metadata']['name'] }}",
         kubernetes_conn_id='kubernetes_default',
         attach_log=True,   
         poke_interval=20,
