@@ -12,32 +12,22 @@ spark = SparkSession.builder \
     .getOrCreate()
 
 # --- 2. CONFIGURATION ---
-# Source: The raw data dump you just created
 source_table = "nav_raw_data.raw_data"
-
-# Target: The DRI specific output table
 target_s3_path = "s3a://dri-data/bronze/dri_output"
 target_table = "dri_db.dri_prod"
 
 print(f"Reading source data from Delta Table: {source_table}")
 
-# --- 3. DATA INGESTION (FROM DELTA) ---
-# Instead of JDBC, we read directly from your S3 Bronze layer
+# --- 3. DATA INGESTION ---
 raw_ledger_df = spark.table(source_table)
 
 # --- 4. TRANSFORMATION LOGIC ---
-
-# 1. Filter for DRI Department first (highly efficient on Delta)
-# 2. Normalize Quantity to Metric Tons
-# 3. Create Product Groups based on Item Descriptions
-dri_output = raw_ledger_df.filter(
-        col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101']) 
-    )
+# Using parentheses () allows us to indent freely without IndentationErrors
+dri_output = (
+    raw_ledger_df
+    .filter(col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101']))
     .filter(col("entry_type_desc").isin("Output", "Sale"))
-    .withColumn(
-        "quantity_mt",
-        col("quantity") / 1000 
-    )
+    .withColumn("quantity_mt", spark_abs(col("quantity")) / 1000)
     .withColumn(
         "product_name",
         when(
@@ -50,12 +40,12 @@ dri_output = raw_ledger_df.filter(
         )
         .when(col("item_description") == "Iron-Ore Fines", "DRI Fines")
         .otherwise(col("item_description"))
+    )
 )
 
 # --- 5. PRODUCTION WRITE ---
 print(f"Saving processed DRI data to: {target_s3_path}")
 
-# Ensure the DRI database exists
 spark.sql("CREATE SCHEMA IF NOT EXISTS dri_db")
 
 (
