@@ -1,4 +1,6 @@
 import os
+import datetime
+import uuid
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, abs as spark_abs
 
@@ -32,8 +34,14 @@ jdbc_props = {
     "fetchsize": "10000"
 }
 
+# Create a unique suffix (Timestamp + short random ID)
+run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+unique_app_name = f"nav-raw-data-{run_id}"
+
 # --- 3. SESSION & LOGIC ---
-spark = SparkSession.builder.appName("NAV_RAW_Data").getOrCreate()
+spark = SparkSession.builder \
+    .appName(unique_app_name) \
+    .getOrCreate()
 
 # Debug: Print the keys found (NEVER print the password)
 print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
