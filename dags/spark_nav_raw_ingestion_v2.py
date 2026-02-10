@@ -13,6 +13,7 @@ default_args = {
 
 with DAG(
     'spark-nav-raw-incremental-v1',
+    is_paused_upon_creation=False,
     default_args=default_args,
     description='Load incremental data extract from MS-SQL database',
     schedule_interval=None,
