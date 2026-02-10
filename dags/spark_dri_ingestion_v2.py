@@ -13,6 +13,7 @@ default_args = {
 
 with DAG(
     'spark-dri-ingetsion-watch-v1',
+    is_paused_upon_creation=False,
     default_args=default_args,
     description='Data extract from MS-SQL database',
     schedule_interval=None,
