@@ -41,6 +41,14 @@ dri_output = (
         .when(col("item_description") == "Iron-Ore Fines", "DRI Fines")
         .otherwise(col("item_description"))
     )
+    # --- OVERWRITE THE EXISTING COLUMN ---
+    .withColumn(
+        "process_center_code",
+        when(col("process_center_code") == "40GU0100", "Kilin 1")
+        .when(col("process_center_code") == "40GU0200", "Kilin 2")
+        .when(col("process_center_code") == "40GU1200", "Kilin 3")
+        .otherwise(col("process_center_code"))
+    )
 )
 
 # --- 5. PRODUCTION WRITE ---
