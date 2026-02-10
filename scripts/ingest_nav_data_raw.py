@@ -151,3 +151,4 @@ else:
     print("No new records found in MSSQL.")
 
 print("Incremental load completed successfully.")
+spark.stop()

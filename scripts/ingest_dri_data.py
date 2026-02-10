@@ -59,3 +59,4 @@ spark.sql("CREATE SCHEMA IF NOT EXISTS dri_db")
 )
 
 print("DRI Ingestion Job Completed Successfully.")
+spark.stop()

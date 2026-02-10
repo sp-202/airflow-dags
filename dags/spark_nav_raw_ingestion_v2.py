@@ -17,6 +17,7 @@ with DAG(
     description='Load incremental data extract from MS-SQL database',
     schedule_interval=None,
     catchup=False,
+    max_active_runs=5, # <--- ADDED THIS
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
