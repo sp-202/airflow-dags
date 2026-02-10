@@ -13,6 +13,7 @@ default_args = {
 
 with DAG(
     'master_orchestrator_pipeline_v1',
+    is_paused_upon_creation=False,
     default_args=default_args,
     schedule_interval=None, # Changed to None for manual testing
     catchup=False
