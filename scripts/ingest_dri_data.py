@@ -25,7 +25,7 @@ raw_ledger_df = spark.table(source_table)
 # Using parentheses () allows us to indent freely without IndentationErrors
 dri_output = (
     raw_ledger_df
-    .filter(col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101']))
+    .filter(col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101', 'FGDRIGRDG1101', 'FGDRIGRDG1102']))
     .filter(col("entry_type_desc").isin("Output", "Sale"))
     .withColumn("quantity_mt", spark_abs(col("quantity")) / 1000)
     .withColumn(
