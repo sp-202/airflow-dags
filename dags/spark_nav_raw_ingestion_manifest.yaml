@@ -1,7 +1,7 @@
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
-  name: spark-nav-data-raw-{{ ts_nodash | lower }}
+  name: {{ params.app_name }}
   namespace: default
   labels:
     sparkoperator.k8s.io/enabled: "true"
