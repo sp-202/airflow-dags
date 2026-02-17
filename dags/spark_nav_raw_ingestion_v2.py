@@ -29,7 +29,7 @@ with DAG(
         application_file="spark_nav_raw_ingestion_manifest.yaml",
         do_xcom_push=True,
         params={
-            's3_endpoint': 'http://minio.default.svc.cluster.local:9000'
+            's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
             'app_name': "spark-nav-data-raw-{{ ts_nodash | lower }}"
         }
     )
