@@ -16,7 +16,7 @@ spec:
   imagePullPolicy: IfNotPresent
   sparkVersion: "4.0.1"
 
-  mainApplicationFile: s3a://dags/scripts/ingest_nav_data_raw.py
+  mainApplicationFile: "{{ application_file_s3 }}"
 
   sparkConf:
     spark.hadoop.fs.s3a.endpoint: http://minio.default.svc.cluster.local:9000

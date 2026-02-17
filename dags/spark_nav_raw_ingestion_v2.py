@@ -30,7 +30,8 @@ with DAG(
         do_xcom_push=True,
         params={
             's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
-            'app_name': "spark-nav-data-raw"
+            'app_name': "spark-nav-data-raw",
+            'application_file_s3': 's3a://dags/scripts/ingest_nav_data_raw.py'
         }
     )
 
