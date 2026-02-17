@@ -1,7 +1,7 @@
 apiVersion: sparkoperator.k8s.io/v1beta2
 kind: SparkApplication
 metadata:
-  name: {{ params.app_name }}
+  name: "{{ params.app_prefix }}-{{ ts_nodash | lower }}"
   namespace: default
   labels:
     sparkoperator.k8s.io/enabled: "true"

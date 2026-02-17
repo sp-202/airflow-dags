@@ -30,7 +30,7 @@ with DAG(
         do_xcom_push=True,
         params={
             's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
-            'app_name': "spark-nav-data-raw-{{ ts_nodash | lower }}"
+            'app_name': "spark-nav-data-raw"
         }
     )
 
