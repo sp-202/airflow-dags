@@ -27,7 +27,7 @@ source_sql_table = "[dbo].[ANRML$MIS Lab Report]"
 watermark = 0
 try:
     if spark.catalog.tableExists(target_table):
-        # NOTE: Using 'sl_no' because that is how it will be named after cleaning
+        # We need the highest 'sl_no' currently in the Delta table
         result = spark.sql(f"SELECT COALESCE(MAX(sl_no), 0) FROM {target_table}").collect()
         watermark = result[0][0]
     else:
@@ -39,11 +39,11 @@ except Exception as e:
 print(f"Incremental load starting from SL_No: {watermark}")
 
 # --- 4. FETCH INCREMENTAL DATA FROM MSSQL ---
-# NOTE: The WHERE clause must match the exact column name in MS SQL
+# UPDATED: Using the exact column name 'Sl_ NO_' from MS SQL
 incremental_query = f"""
 (
     SELECT * FROM {source_sql_table}
-    WHERE [SL. No.] > {watermark}
+    WHERE [Sl_ NO_] > {watermark}
 ) AS subquery
 """
 
@@ -58,9 +58,9 @@ df_raw = spark.read.format("jdbc") \
 # --- 5. DATA CLEANING & TRANSFORMATION ---
 if df_raw.count() > 0:
     # UPDATED CLEANING LOGIC:
-    # 1. Lowercase
+    # 1. Lowercase all column names
     # 2. Replace ' ' with '_'
-    # 3. Remove '.' completely to map 'Sl. No.' to 'sl_no'
+    # 3. Replace '.' with '' (remove it)
     
     clean_cols = [c.lower().strip().replace(" ", "_").replace(".", "") for c in df_raw.columns]
     
@@ -76,6 +76,7 @@ if df_raw.count() > 0:
     
     if not table_exists:
         print(f"Creating Delta table {target_table} for the first time...")
+        # Write empty DataFrame to initialize schema and location
         df_cleaned.write \
             .format("delta") \
             .mode("ignore") \
@@ -84,7 +85,7 @@ if df_raw.count() > 0:
     # Perform the merge
     df_cleaned.createOrReplaceTempView("batch_updates")
     
-    # Merge on sl_no
+    # Merge on 'sl_no' (which is the cleaned version of 'Sl_ NO_')
     spark.sql(f"""
         MERGE INTO {target_table} AS target
         USING batch_updates AS source
