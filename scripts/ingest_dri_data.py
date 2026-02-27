@@ -44,9 +44,9 @@ dri_output = (
     # --- OVERWRITE THE EXISTING COLUMN ---
     .withColumn(
         "process_center_code",
-        when(col("process_center_code") == "40GU0100", "Kilin 1")
-        .when(col("process_center_code") == "40GU0200", "Kilin 2")
-        .when(col("process_center_code") == "40GU1200", "Kilin 4")
+        when(col("process_center_code") == "40GU0100", "Kiln 1")
+        .when(col("process_center_code") == "40GU0200", "Kiln 2")
+        .when(col("process_center_code") == "40GU1200", "Kiln 4")
         .otherwise(col("process_center_code"))
     )
 )
