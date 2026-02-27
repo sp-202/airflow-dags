@@ -43,7 +43,7 @@ print(f"Incremental load starting from SL_No: {watermark}")
 incremental_query = f"""
 (
     SELECT * FROM {source_sql_table}
-    WHERE [Sl_ NO_] > {watermark}
+    WHERE [Sl_ No_] > {watermark}
 ) AS subquery
 """
 
