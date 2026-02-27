@@ -16,28 +16,32 @@ spark = SparkSession.builder \
 db_host = os.getenv("DB_HOST")
 db_user = os.getenv("DB_USER")
 db_pass = os.getenv("DB_PASS")
-jdbc_url = f"jdbc:sqlserver://{db_host}:1433;databaseName={os.getenv('DB_NAME')};encrypt=true;trustServerCertificate=true"
+db_name = os.getenv("DB_NAME")
+jdbc_url = f"jdbc:sqlserver://{db_host}:1433;databaseName={db_name};encrypt=true;trustServerCertificate=true"
 
 target_table = "nav_raw_data.lab_report_data"
-# Source table name in MS SQL
 source_sql_table = "[dbo].[MIS Lab Report]" 
 
-spark.sql(f"""
-        CREATE TABLE IF NOT EXISTS {target_table}
-    """)
+# REMOVED the broken CREATE TABLE line here. 
+# We handle creation in Step 6.
 
 # --- 3. GET WATERMARK (Max SL. No.) ---
+watermark = 0
 try:
-    # Fetch the highest serial number already stored in Delta
-    last_sl = spark.sql(f"SELECT MAX(sl_no) FROM {target_table}").collect()[0][0]
-    watermark = last_sl if last_sl else 0
-except Exception:
+    # Safely check if the table exists in the Spark Catalog
+    if spark.catalog.tableExists(target_table):
+        # Use COALESCE to handle the case where the table exists but is empty
+        result = spark.sql(f"SELECT COALESCE(MAX(sl_no), 0) FROM {target_table}").collect()
+        watermark = result[0][0]
+    else:
+        print(f"Target table {target_table} does not exist yet. Starting full load.")
+except Exception as e:
+    print(f"Could not fetch watermark due to: {e}. Defaulting to 0.")
     watermark = 0
 
 print(f"Incremental load starting from SL_No: {watermark}")
 
 # --- 4. FETCH INCREMENTAL DATA FROM MSSQL ---
-# Query uses the watermark to pull only new rows
 incremental_query = f"""
 (
     SELECT * FROM {source_sql_table}
@@ -55,10 +59,7 @@ df_raw = spark.read.format("jdbc") \
 
 # --- 5. DATA CLEANING & TRANSFORMATION ---
 if df_raw.count() > 0:
-    # 1. Clean column names: Lowercase, replace ' ' and '.' with '_'
-    # 2. Handle the "Mining" department logic
-    
-    # Generate clean names mapping
+    # Rename columns to small_letters_with_underscores
     clean_cols = [c.lower().strip().replace(" ", "_").replace(".", "") for c in df_raw.columns]
     
     df_cleaned = df_raw.toDF(*clean_cols) \
@@ -71,14 +72,14 @@ if df_raw.count() > 0:
     # --- 6. MERGE INTO DELTA TABLE ---
     df_cleaned.createOrReplaceTempView("batch_updates")
     
-    # Ensure target table exists (schema matches batch_updates)
+    # This block handles the "Table Not Exists" issue properly
+    # It uses the schema derived from df_cleaned
     spark.sql(f"""
         CREATE TABLE IF NOT EXISTS {target_table}
         USING DELTA
         AS SELECT * FROM batch_updates WHERE 1=0
     """)
 
-    # Merge on sl_no (our incremental primary key)
     spark.sql(f"""
         MERGE INTO {target_table} AS target
         USING batch_updates AS source
