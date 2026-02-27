@@ -24,7 +24,7 @@ jdbc_url = f"jdbc:sqlserver://{db_host}:1433;databaseName={db_name};encrypt=true
 # Target table in HMS (Hive Metastore)
 target_table = "nav_raw_data.lab_report_data"
 # Source table name in MS SQL
-source_sql_table = "[dbo].[MIS Lab Report]" 
+source_sql_table = "[dbo].[ANRML$MIS Lab Report]" 
 
 # --- 3. GET WATERMARK (Max SL. No.) ---
 watermark = 0
