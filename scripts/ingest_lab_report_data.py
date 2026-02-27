@@ -19,7 +19,10 @@ db_pass = os.getenv("DB_PASS")
 db_name = os.getenv("DB_NAME")
 jdbc_url = f"jdbc:sqlserver://{db_host}:1433;databaseName={db_name};encrypt=true;trustServerCertificate=true"
 
+# Define the table name and the specific S3 storage path
 target_table = "nav_raw_data.lab_report_data"
+s3_delta_path = "s3a://nav-data/bronze/lab_mis_data"
+
 # Source table name in MS SQL
 source_sql_table = "[dbo].[ANRML$MIS Lab Report]" 
 
@@ -39,7 +42,7 @@ except Exception as e:
 print(f"Incremental load starting from SL_No: {watermark}")
 
 # --- 4. FETCH INCREMENTAL DATA FROM MSSQL ---
-# UPDATED: Using the exact column name 'Sl_ NO_' from MS SQL
+# NOTE: The WHERE clause must match the exact column name in MS SQL
 incremental_query = f"""
 (
     SELECT * FROM {source_sql_table}
@@ -57,14 +60,20 @@ df_raw = spark.read.format("jdbc") \
 
 # --- 5. DATA CLEANING & TRANSFORMATION ---
 if df_raw.count() > 0:
-    # UPDATED CLEANING LOGIC:
-    # 1. Lowercase all column names
-    # 2. Replace ' ' with '_'
-    # 3. Replace '.' with '' (remove it)
+    # UPDATED CLEANING LOGIC TO FIX sl__no_ issue:
     
-    clean_cols = [c.lower().strip().replace(" ", "_").replace(".", "") for c in df_raw.columns]
+    # 1. Lowercase all
+    df_cleaned = df_raw.toDF(*[c.lower() for c in df_raw.columns])
     
-    df_cleaned = df_raw.toDF(*clean_cols) \
+    # 2. Specifically rename 'sl_ no_' to 'sl_no' to match merge key
+    df_cleaned = df_cleaned.withColumnRenamed("sl_ no_", "sl_no")
+    
+    # 3. Clean remaining columns (replace spaces/dots with underscores)
+    new_cols = [c.replace(" ", "_").replace(".", "") for c in df_cleaned.columns]
+    df_cleaned = df_cleaned.toDF(*new_cols)
+    
+    # 4. Handle transformations
+    df_cleaned = df_cleaned \
         .withColumn("department", 
             when(col("department").contains("Mines PIT"), "Mining")
             .otherwise(col("department"))
@@ -75,17 +84,18 @@ if df_raw.count() > 0:
     table_exists = spark.catalog.tableExists(target_table)
     
     if not table_exists:
-        print(f"Creating Delta table {target_table} for the first time...")
-        # Write empty DataFrame to initialize schema and location
+        print(f"Creating Delta table {target_table} at {s3_delta_path}...")
+        # Write DataFrame to initialize schema and specific S3 location
         df_cleaned.write \
             .format("delta") \
             .mode("ignore") \
+            .option("path", s3_delta_path) \
             .saveAsTable(target_table)
 
     # Perform the merge
     df_cleaned.createOrReplaceTempView("batch_updates")
     
-    # Merge on 'sl_no' (which is the cleaned version of 'Sl_ NO_')
+    # Merge on 'sl_no'
     spark.sql(f"""
         MERGE INTO {target_table} AS target
         USING batch_updates AS source
