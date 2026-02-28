@@ -23,7 +23,7 @@ with DAG(
     catchup=False
 ) as dag:
 
-    trigger_raw = TriggerDagRunOperator(
+    trigger_nav_raw = TriggerDagRunOperator(
         task_id='trigger_nav_raw',
         trigger_dag_id='spark-nav-raw-incremental-v1',
         wait_for_completion=True,
@@ -39,4 +39,14 @@ with DAG(
         reset_dag_run=True,
     )
 
-    trigger_raw >> trigger_dri
+    trigger_manual_nav_data = TriggerDagRunOperator(
+        task_id='trigger_nav_manual_ingest',
+        trigger_dag_id='spark-manual-nav-data-v1',
+        wait_for_completion=True,
+        poke_interval=10,
+        reset_dag_run=True,
+    )
+
+    [trigger_nav_raw, trigger_manual_nav_data]
+
+    trigger_nav_raw >> trigger_dri

@@ -6,7 +6,7 @@ from pyspark.sql import functions as F
 # --- 1. SESSION INITIALIZATION ---
 run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
 spark = SparkSession.builder \
-    .appName(f"incremental-production-details-{run_id}") \
+    .appName(f"incremental-manual-entry-nav-{run_id}") \
     .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
     .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
     .getOrCreate()
