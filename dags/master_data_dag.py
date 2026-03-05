@@ -47,6 +47,4 @@ with DAG(
         reset_dag_run=True,
     )
 
-    [trigger_nav_raw, trigger_manual_nav_data]
-
-    trigger_nav_raw >> trigger_dri
+    trigger_nav_raw >> trigger_dri >> trigger_manual_nav_data
