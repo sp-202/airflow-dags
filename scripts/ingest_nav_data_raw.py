@@ -112,11 +112,29 @@ item_dim_query = """
 """
 item_df = spark.read.jdbc(url=jdbc_url, table=item_dim_query, properties=jdbc_props)
 
+# read the process-center-code and its description to map
+process_center_code_query = """
+    (
+        SELECT 
+            [Code] as process_center_code,
+            [Name] as department_process_center_code,
+            [Shortcut Dimension 1 Code] as department_name
+        FROM [dbo].[ANRML$Dimension Value]
+        WHERE [Dimension Code] in ('PROCESS CENTER')
+    ) t
+    """
+process_center_code_map = spark.read.jdbc(
+    url=jdbc_url,
+    table=process_center_code_query,
+    properties=jdbc_props
+)
+
 # 4. Join Fact and Dimension
 # This ensures the schema matches your existing Delta Table
 incremental_final_df = (
     ledger_updates_df
-    .join(item_df, on="item_no", how="left")
+    .join(broadcast(item_df), on="item_no", how="left")
+    .join(broadcast(process_center_code_map), on="process_center_code", how="left")
     .withColumn(
         "entry_type_desc",
         when(col("entry_type") == 0, "Purchase")
