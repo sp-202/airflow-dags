@@ -2,7 +2,7 @@ import os
 import datetime
 import uuid
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, when, abs as spark_abs
+from pyspark.sql.functions import col, broadcast, when, abs as spark_abs
 
 # --- 1. SAFE CREDENTIAL LOADING ---
 def get_env_var(name, default=None):
