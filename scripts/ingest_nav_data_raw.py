@@ -117,7 +117,7 @@ process_center_code_query = """
     (
         SELECT 
             [Code] as process_center_code,
-            [Name] as department_process_center_code,
+            [Name] as department_process_center,
             [Shortcut Dimension 1 Code] as department_name
         FROM [dbo].[ANRML$Dimension Value]
         WHERE [Dimension Code] in ('PROCESS CENTER')
