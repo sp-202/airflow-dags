@@ -75,9 +75,9 @@ if df_raw.count() > 0:
     if "parameter" in df_cleaned.columns:
         df_cleaned = df_cleaned.withColumn(
             "parameter",
-            trim(regexp_replace(col("parameter"), r"^%+|%+$", ""))
+            trim(regexp_replace(col("parameter"), r"%", ""))
         )
-        print("Normalized 'parameter' column: stripped leading/trailing '%' signs.")
+        print("Normalized 'parameter' column: stripped all '%' signs.")
 
     # Step 5: Deduplicate — after normalization %Fe(T) and Fe(T)% are identical.
     # Keep one row per (sl_no, parameter), ordered by sl_no desc as tiebreaker.
