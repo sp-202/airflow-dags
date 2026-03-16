@@ -20,14 +20,14 @@ db_pass = os.getenv("DB_PASS")
 db_name = os.getenv("DB_NAME")
 jdbc_url = f"jdbc:sqlserver://{db_host}:1433;databaseName={db_name};encrypt=true;trustServerCertificate=true"
 
-# Define the table name and the specific S3 storage path
-target_table = "nav_raw_data.lab_report_data"
+target_table  = "nav_raw_data.lab_report_data"
 s3_delta_path = "s3a://nav-data/bronze/lab_mis_data"
-
-# Source table name in MS SQL
 source_sql_table = "[dbo].[ANRML$MIS Lab Report]"
 
 # --- 3. GET WATERMARK (Max SL. No.) ---
+# ✅ FIX: Use try/except around BOTH tableExists AND the SQL query.
+#    tableExists itself throws when the Delta path doesn't exist yet,
+#    so we catch that and safely fall back to watermark = 0.
 watermark = 0
 try:
     if spark.catalog.tableExists(target_table):
@@ -36,7 +36,7 @@ try:
     else:
         print(f"Target table {target_table} does not exist yet. Starting full load.")
 except Exception as e:
-    print(f"Could not fetch watermark due to: {e}. Defaulting to 0.")
+    print(f"Table not found or Delta path missing. Starting full load. Reason: {e}")
     watermark = 0
 
 print(f"Incremental load starting from SL_No: {watermark}")
@@ -70,10 +70,8 @@ if df_raw.count() > 0:
     new_cols = [c.replace(" ", "_").replace(".", "") for c in df_cleaned.columns]
     df_cleaned = df_cleaned.toDF(*new_cols)
 
-    # Step 4: Normalize 'parameter' column
-    #   - Strip leading/trailing '%' signs         e.g. %Fe(T)  -> Fe(T)
-    #   - Strip leading/trailing whitespace        e.g. "Fe(T) " -> Fe(T)
-    #   Result: %Fe(T), Fe(T)%, Fe(T) all become -> Fe(T)
+    # Step 4: Normalize 'parameter' column — strip leading/trailing '%'
+    # %Fe(T) -> Fe(T), Fe(T)% -> Fe(T), Fe(T) -> Fe(T) (unchanged)
     if "parameter" in df_cleaned.columns:
         df_cleaned = df_cleaned.withColumn(
             "parameter",
@@ -81,8 +79,8 @@ if df_raw.count() > 0:
         )
         print("Normalized 'parameter' column: stripped leading/trailing '%' signs.")
 
-    # Step 5: Deduplicate — after normalization, %Fe(T) and Fe(T)% are the same.
-    #   Keep the latest row per (sl_no, parameter) combination.
+    # Step 5: Deduplicate — after normalization %Fe(T) and Fe(T)% are identical.
+    # Keep one row per (sl_no, parameter), ordered by sl_no desc as tiebreaker.
     window_dedup = Window.partitionBy("sl_no", "parameter").orderBy(col("sl_no").desc())
     df_cleaned = df_cleaned \
         .withColumn("_row_num", F.row_number().over(window_dedup)) \
@@ -99,30 +97,39 @@ if df_raw.count() > 0:
         .withColumn("ingestion_timestamp", F.current_timestamp())
 
     # --- 6. MERGE INTO DELTA TABLE ---
-    table_exists = spark.catalog.tableExists(target_table)
+    # ✅ FIX: Re-check table existence safely AFTER cleaning,
+    #    using a separate try/except so Delta path errors are caught cleanly.
+    table_exists = False
+    try:
+        table_exists = spark.catalog.tableExists(target_table)
+    except Exception:
+        table_exists = False  # Delta path doesn't exist yet — treat as first run
 
     if not table_exists:
-        print(f"Creating Delta table {target_table} at {s3_delta_path}...")
+        # First run: write directly to create the Delta table + register in catalog
+        print(f"Delta table not found. Creating {target_table} at {s3_delta_path}...")
         df_cleaned.write \
             .format("delta") \
-            .mode("ignore") \
+            .mode("overwrite") \
             .option("path", s3_delta_path) \
             .saveAsTable(target_table)
+        print(f"Successfully created and loaded {df_cleaned.count()} records into {target_table}.")
 
-    # Perform the UPSERT merge on sl_no
-    df_cleaned.createOrReplaceTempView("batch_updates")
+    else:
+        # Subsequent runs: UPSERT via MERGE on sl_no
+        df_cleaned.createOrReplaceTempView("batch_updates")
 
-    spark.sql(f"""
-        MERGE INTO {target_table} AS target
-        USING batch_updates AS source
-        ON target.sl_no = source.sl_no
-        WHEN MATCHED THEN
-            UPDATE SET *
-        WHEN NOT MATCHED THEN
-            INSERT *
-    """)
+        spark.sql(f"""
+            MERGE INTO {target_table} AS target
+            USING batch_updates AS source
+            ON target.sl_no = source.sl_no
+            WHEN MATCHED THEN
+                UPDATE SET *
+            WHEN NOT MATCHED THEN
+                INSERT *
+        """)
 
-    print(f"Successfully upserted {df_cleaned.count()} records into {target_table}.")
+        print(f"Successfully upserted {df_cleaned.count()} records into {target_table}.")
 
 else:
     print("No new lab report data found in MS SQL Server.")
