@@ -2,7 +2,8 @@ import os
 import datetime
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.functions import col, when
+from pyspark.sql.functions import col, when, regexp_replace, trim
+from pyspark.sql.window import Window
 
 # --- 1. SESSION INITIALIZATION ---
 run_id = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -24,13 +25,12 @@ target_table = "nav_raw_data.lab_report_data"
 s3_delta_path = "s3a://nav-data/bronze/lab_mis_data"
 
 # Source table name in MS SQL
-source_sql_table = "[dbo].[ANRML$MIS Lab Report]" 
+source_sql_table = "[dbo].[ANRML$MIS Lab Report]"
 
 # --- 3. GET WATERMARK (Max SL. No.) ---
 watermark = 0
 try:
     if spark.catalog.tableExists(target_table):
-        # We need the highest 'sl_no' currently in the Delta table
         result = spark.sql(f"SELECT COALESCE(MAX(sl_no), 0) FROM {target_table}").collect()
         watermark = result[0][0]
     else:
@@ -42,7 +42,6 @@ except Exception as e:
 print(f"Incremental load starting from SL_No: {watermark}")
 
 # --- 4. FETCH INCREMENTAL DATA FROM MSSQL ---
-# NOTE: The WHERE clause must match the exact column name in MS SQL
 incremental_query = f"""
 (
     SELECT * FROM {source_sql_table}
@@ -60,21 +59,40 @@ df_raw = spark.read.format("jdbc") \
 
 # --- 5. DATA CLEANING & TRANSFORMATION ---
 if df_raw.count() > 0:
-    # UPDATED CLEANING LOGIC TO FIX sl__no_ issue:
-    
-    # 1. Lowercase all
+
+    # Step 1: Lowercase all column names
     df_cleaned = df_raw.toDF(*[c.lower() for c in df_raw.columns])
-    
-    # 2. Specifically rename 'sl_ no_' to 'sl_no' to match merge key
+
+    # Step 2: Rename 'sl_ no_' -> 'sl_no' (merge key)
     df_cleaned = df_cleaned.withColumnRenamed("sl_ no_", "sl_no")
-    
-    # 3. Clean remaining columns (replace spaces/dots with underscores)
+
+    # Step 3: Clean remaining column names (spaces/dots -> underscores)
     new_cols = [c.replace(" ", "_").replace(".", "") for c in df_cleaned.columns]
     df_cleaned = df_cleaned.toDF(*new_cols)
-    
-    # 4. Handle transformations
+
+    # Step 4: Normalize 'parameter' column
+    #   - Strip leading/trailing '%' signs         e.g. %Fe(T)  -> Fe(T)
+    #   - Strip leading/trailing whitespace        e.g. "Fe(T) " -> Fe(T)
+    #   Result: %Fe(T), Fe(T)%, Fe(T) all become -> Fe(T)
+    if "parameter" in df_cleaned.columns:
+        df_cleaned = df_cleaned.withColumn(
+            "parameter",
+            trim(regexp_replace(col("parameter"), r"^%+|%+$", ""))
+        )
+        print("Normalized 'parameter' column: stripped leading/trailing '%' signs.")
+
+    # Step 5: Deduplicate — after normalization, %Fe(T) and Fe(T)% are the same.
+    #   Keep the latest row per (sl_no, parameter) combination.
+    window_dedup = Window.partitionBy("sl_no", "parameter").orderBy(col("sl_no").desc())
     df_cleaned = df_cleaned \
-        .withColumn("department", 
+        .withColumn("_row_num", F.row_number().over(window_dedup)) \
+        .filter(col("_row_num") == 1) \
+        .drop("_row_num")
+
+    # Step 6: Business transformations
+    df_cleaned = df_cleaned \
+        .withColumn(
+            "department",
             when(col("department").contains("Mines PIT"), "Mining")
             .otherwise(col("department"))
         ) \
@@ -82,20 +100,18 @@ if df_raw.count() > 0:
 
     # --- 6. MERGE INTO DELTA TABLE ---
     table_exists = spark.catalog.tableExists(target_table)
-    
+
     if not table_exists:
         print(f"Creating Delta table {target_table} at {s3_delta_path}...")
-        # Write DataFrame to initialize schema and specific S3 location
         df_cleaned.write \
             .format("delta") \
             .mode("ignore") \
             .option("path", s3_delta_path) \
             .saveAsTable(target_table)
 
-    # Perform the merge
+    # Perform the UPSERT merge on sl_no
     df_cleaned.createOrReplaceTempView("batch_updates")
-    
-    # Merge on 'sl_no'
+
     spark.sql(f"""
         MERGE INTO {target_table} AS target
         USING batch_updates AS source
@@ -105,8 +121,9 @@ if df_raw.count() > 0:
         WHEN NOT MATCHED THEN
             INSERT *
     """)
-    
-    print(f"Successfully Upserted {df_cleaned.count()} records.")
+
+    print(f"Successfully upserted {df_cleaned.count()} records into {target_table}.")
+
 else:
     print("No new lab report data found in MS SQL Server.")
 
