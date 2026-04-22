@@ -70,17 +70,18 @@ MERGE_KEY   = "trip_no"   # unique identifier for upsert
 spark.sql("CREATE SCHEMA IF NOT EXISTS logistics")
 
 try:
-    last_closing_time = spark.sql(
+    last_closing_time_raw = spark.sql(
         f"SELECT MAX(trip_closing_time) FROM {TABLE_NAME}"
     ).collect()[0][0]
-    # If table is empty or column is all-null, fall back to epoch
-    if last_closing_time is None:
+    if last_closing_time_raw is None:
         last_closing_time = "1900-01-01 00:00:00"
     else:
-        last_closing_time = str(last_closing_time)
+        # Always format as yyyy-MM-dd HH:mm:ss — required by CONVERT(..., 120)
+        # str(Timestamp) can include microseconds e.g. "2024-05-28 10:57:00.123456"
+        # which SQL Server style 120 rejects — truncate to seconds only.
+        last_closing_time = last_closing_time_raw.strftime("%Y-%m-%d %H:%M:%S")
     print(f"Watermark — last trip_closing_time in Delta: {last_closing_time}")
 except Exception:
-    # Table does not exist yet — full load
     last_closing_time = "1900-01-01 00:00:00"
     print("Target table not found — performing full initial load.")
 
@@ -94,9 +95,12 @@ incremental_trips_query = f"""
     FROM [dbo].[ANRML$RGP_NRGP Header]
     WHERE [Trip Close] = 1
       AND [Type]       = 1
-      AND [Trip Closing Time] > '{last_closing_time}'
+      AND [Trip Closing Time] > CONVERT(DATETIME, '{last_closing_time}', 120)
 ) t
 """
+# CONVERT style 120 = ODBC canonical: yyyy-mm-dd hh:mi:ss
+# Forces SQL Server to parse the watermark string safely as DATETIME
+# without relying on server locale/regional date format settings
 
 raw_trips = spark.read.jdbc(
     url=jdbc_url,
