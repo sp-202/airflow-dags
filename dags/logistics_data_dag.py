@@ -1,7 +1,6 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKubernetesSensor
-from airflow.operators.bash import BashOperator # FIXED: Added this import
 from airflow.utils.dates import days_ago
 import os
 
@@ -16,35 +15,60 @@ with DAG(
     is_paused_upon_creation=False,
     default_args=default_args,
     description='Triggers Logistics Entry at every 3 hrs',
-    schedule='30 */3 * * *',  # Runs at 0:30, 3:30, 6:30, 9:30, 12:30, 15:30, 18:30, 21:30 IST
+    schedule='30 */3 * * *',  # 0:30, 3:30, 6:30, 9:30, 12:30, 15:30, 18:30, 21:30 IST
     catchup=False,
     max_active_runs=5,
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
-    # 1. Submit the Job
-    submit_job = SparkKubernetesOperator(
+    # -------------------------------------------------------------------------
+    # JOB 1 — Closed/Incremental trips  (logistics_data.py)
+    # -------------------------------------------------------------------------
+    logistics_closed_trip = SparkKubernetesOperator(
         task_id='extract_logistics_incremental_data',
         namespace='default',
         application_file="spark_jinja_template.yaml",
         do_xcom_push=True,
         params={
             's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
-            'app_name': "spark-logistics-incremental-data",
-            'application_file_s3': 's3a://dags/scripts/logistics_data.py'
+            'app_name': 'spark-logistics-incremental-data',
+            'application_file_s3': 's3a://dags/scripts/logistics_data.py',
         }
     )
 
-    # 2. Wait for the Job AND Fetch Logs
-    monitor_job = SparkKubernetesSensor(
-        task_id='monitor_delta_job',
+    monitor_closed_trip = SparkKubernetesSensor(
+        task_id='monitor_closed_trip_job',
         namespace='default',
         application_name="{{ task_instance.xcom_pull(task_ids='extract_logistics_incremental_data')['metadata']['name'] }}",
         kubernetes_conn_id='kubernetes_default',
-        attach_log=True,   
+        attach_log=True,
         poke_interval=20,
-        timeout=3600
+        timeout=3600,
     )
 
-    # Set the execution order
-    submit_job >> monitor_job 
+    # -------------------------------------------------------------------------
+    # JOB 2 — Active/Open trips  (logistics_live_data.py)
+    # -------------------------------------------------------------------------
+    logistics_current_trip = SparkKubernetesOperator(
+        task_id='extract_logistics_open_trip',
+        namespace='default',
+        application_file="spark_jinja_template.yaml",
+        do_xcom_push=True,
+        params={
+            's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
+            'app_name': 'spark-logistics-open-trip-data',
+            'application_file_s3': 's3a://dags/scripts/logistics_live_data.py',
+        }
+    )
+
+    monitor_current_trip = SparkKubernetesSensor(
+        task_id='monitor_current_trip_job',
+        namespace='default',
+        application_name="{{ task_instance.xcom_pull(task_ids='extract_logistics_open_trip')['metadata']['name'] }}",
+        kubernetes_conn_id='kubernetes_default',
+        attach_log=True,
+        poke_interval=20,
+        timeout=3600,
+    )
+
+    logistics_closed_trip  >> monitor_closed_trip >> logistics_current_trip >> monitor_current_trip
