@@ -13,10 +13,14 @@ default_args = {
 
 with DAG(
     'logistics-incremental-data-v1',
-    is_paused_upon_creation=False,
+    is_paused_upon_creation=False, 
     default_args=default_args,
-    description='Load incremental data extract from MS-SQL database',
-    schedule_interval=None,
+    description='Triggers Logistics Entry at every 3 hrs',
+    # 2. Use 'schedule' instead of 'schedule_interval' 
+    # 3. Use the actual IST hours: 9, 14, and 18
+    schedule='30 */3 * * *'  # Runs at 0:30, 3:30, 6:30, 9:30, 12:30, 15:30, 18:30, 21:30
+    max_active_runs=5,
+    catchup=False
     catchup=False,
     max_active_runs=5, # <--- ADDED THIS
     template_searchpath=[os.path.dirname(__file__)],
