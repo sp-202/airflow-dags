@@ -2,6 +2,14 @@
 # Logistics Active Trips Pipeline — Full Overwrite (Airflow-triggered every 3hrs)
 # Fetches active/open trips and overwrites the Delta table each run.
 # Filters: Trip Close=0, Logistic Operation=1, Type=1, Status=1
+#
+# CHANGELOG:
+#   - ontime: NAV backend always stores 0 (FlowField, not computed in SQL).
+#             Recalculated here using unix timestamps (millisecond precision,
+#             timezone-safe) as: elapsed_ms > defined_tat_ms → 0, else → 1.
+#             Pipeline capture time is used as "now" so every run is consistent.
+#   - last_data_processed_timestamp: new column recording exactly when this
+#             pipeline run processed the row (UTC, millisecond precision).
 # =============================================================================
 
 import os
@@ -63,7 +71,25 @@ print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
 TABLE_NAME = "logistics.active_trips"
 
 # -----------------------------------------------------------------------------
-# 5. READ ACTIVE TRIPS FROM SQL SERVER
+# 5. CAPTURE PIPELINE RUN TIMESTAMP (UTC, millisecond precision)
+#    This is the single "now" reference used for:
+#      - ontime calculation   (elapsed ms vs TAT ms)
+#      - hrs_elapsed_so_far   (how long trip has been running)
+#      - last_data_processed_timestamp (audit column)
+#
+#    Using unix epoch milliseconds avoids ALL local timezone issues —
+#    both trip_start_time (from SQL Server) and pipeline_now_ms are in
+#    the same absolute scale regardless of server locale.
+# -----------------------------------------------------------------------------
+pipeline_now_ms   = int(datetime.datetime.utcnow().timestamp() * 1000)   # e.g. 1745750400000
+pipeline_now_ts   = F.lit(pipeline_now_ms).cast("long")                  # broadcast as Spark literal
+pipeline_now_iso  = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
+
+print(f"Pipeline capture time (UTC) : {pipeline_now_iso}")
+print(f"Pipeline capture time (ms)  : {pipeline_now_ms}")
+
+# -----------------------------------------------------------------------------
+# 6. READ ACTIVE TRIPS FROM SQL SERVER
 #    Filters pushed down to SQL Server to minimise JDBC payload:
 #      - Trip Close      = 0  → trip is still open/active
 #      - Logistic Operation = 1
@@ -96,7 +122,8 @@ if total_count == 0:
     exit(0)
 
 # -----------------------------------------------------------------------------
-# 6. READ ROUTE MASTER (always fresh — small table)
+# 7. READ ROUTE MASTER (always fresh — small table)
+#    Takes the LATEST definition per route (most recent Starting Date).
 # -----------------------------------------------------------------------------
 route_window = Window.partitionBy("Route ID").orderBy(F.col("Starting Date").desc())
 
@@ -111,6 +138,7 @@ route_master = (
     .drop("_rn", "timestamp")
     .select(
         F.col("Route ID").alias("route_id_def"),
+        # NOTE: field is misnamed in NAV — "TAT Kilometer" actually stores TAT hours
         F.col("TAT Kilometer").alias("defined_tat_hrs"),
         F.col("Diesel Quantity").alias("defined_diesel_quantity"),
         F.col("Trip Allowance").alias("defined_trip_allowance"),
@@ -120,7 +148,7 @@ route_master = (
 )
 
 # -----------------------------------------------------------------------------
-# 7. SELECT & RENAME TRIP COLUMNS
+# 8. SELECT & RENAME TRIP COLUMNS
 # -----------------------------------------------------------------------------
 trips = raw_trips.select(
     F.col("Trip No").alias("trip_no"),
@@ -147,9 +175,9 @@ trips = raw_trips.select(
     F.col("Unloading Point in Time").cast("timestamp").alias("unloading_point_in_time"),
     F.col("Unloading Point out Time").cast("timestamp").alias("unloading_point_out_time"),
 
-    # TAT / on-time
+    # TAT / on-time (raw NAV fields — ontime=0 always from SQL, will be recalculated below)
     F.col("TAT Kilometer").alias("tat_kilometer"),
-    F.col("Ontime").alias("ontime"),
+    F.col("Ontime").alias("ontime_nav"),                  # kept for audit; renamed to avoid confusion
     F.col("Total Stoppage Time").alias("total_stoppage_time"),
     F.col("Halt Start Date Time").cast("timestamp").alias("halt_start_date_time"),
     F.col("Last Halt Date Time").alias("last_halt_date_time"),
@@ -180,19 +208,24 @@ trips = raw_trips.select(
 )
 
 # -----------------------------------------------------------------------------
-# 8. COMPUTE DERIVED METRICS
+# 9. COMPUTE DERIVED METRICS
 # -----------------------------------------------------------------------------
 def hrs_diff(start_col, end_col):
+    """Returns fractional hours between two timestamp columns."""
     return (F.unix_timestamp(F.col(end_col)) - F.unix_timestamp(F.col(start_col))) / 3600.0
 
 trips = (
     trips
+
+    # --- Distance & fuel ---
     .withColumn("total_kms",
         (F.col("kilometer_in") - F.col("kilometer_out")).cast("decimal(38,19)"))
     .withColumn("fuel_efficiency_km_l",
         F.when(F.col("diesel_consumed") > 0,
             (F.col("kilometer_in") - F.col("kilometer_out")) / F.col("diesel_consumed")
         ).otherwise(None).cast("decimal(35,2)"))
+
+    # --- Time legs (based on stored timestamps) ---
     .withColumn("yard_to_loading_hrs",     hrs_diff("trip_start_time",         "loading_point_in_time"))
     .withColumn("loading_time_hrs",        hrs_diff("loading_point_in_time",   "loading_point_out_time"))
     .withColumn("transit_time_hrs",        hrs_diff("loading_point_out_time",  "unloading_point_in_time"))
@@ -202,7 +235,8 @@ trips = (
     .withColumn("journey_time_hrs",        hrs_diff("loading_point_out_time",  "unloading_point_out_time"))
     .withColumn("idle_time_hrs",
         F.col("total_trip_duration_hrs") - F.col("journey_time_hrs"))
-    # Round all hour columns
+
+    # --- Round all hour columns to 2 dp ---
     .withColumn("yard_to_loading_hrs",     F.round(F.col("yard_to_loading_hrs"),     2))
     .withColumn("loading_time_hrs",        F.round(F.col("loading_time_hrs"),        2))
     .withColumn("transit_time_hrs",        F.round(F.col("transit_time_hrs"),        2))
@@ -211,51 +245,172 @@ trips = (
     .withColumn("total_trip_duration_hrs", F.round(F.col("total_trip_duration_hrs"), 2))
     .withColumn("journey_time_hrs",        F.round(F.col("journey_time_hrs"),        2))
     .withColumn("idle_time_hrs",           F.round(F.col("idle_time_hrs"),           2))
+
+    # -------------------------------------------------------------------------
+    # LIVE ELAPSED TIME (millisecond-precision, timezone-safe)
+    #
+    # Formula:
+    #   elapsed_ms = pipeline_now_ms  -  (unix_timestamp(trip_start_time) * 1000)
+    #
+    # Both sides are UTC epoch milliseconds → no local time ambiguity.
+    # pipeline_now_ms is captured ONCE at pipeline start (Step 5) so every
+    # row in this run uses the identical "now" reference.
+    # -------------------------------------------------------------------------
+    .withColumn("trip_start_ms",
+        (F.unix_timestamp(F.col("trip_start_time")) * 1000).cast("long"))
+
+    .withColumn("elapsed_ms",
+        F.when(
+            F.col("trip_start_ms").isNotNull() & (F.col("trip_start_ms") > 0),
+            pipeline_now_ts - F.col("trip_start_ms")
+        ).otherwise(F.lit(None).cast("long"))
+    )
+
+    .withColumn("hrs_elapsed_so_far",
+        F.when(
+            F.col("elapsed_ms").isNotNull(),
+            F.round(F.col("elapsed_ms") / 3_600_000.0, 2)
+        ).otherwise(F.lit(None).cast("double"))
+    )
 )
 
 # -----------------------------------------------------------------------------
-# 9. JOIN WITH ROUTE MASTER
+# 10. JOIN WITH ROUTE MASTER (brings in defined_tat_hrs per route)
 # -----------------------------------------------------------------------------
-final_df = (
-    trips.join(route_master, trips["route_id"] == route_master["route_id_def"], how="left")
+trips = (
+    trips
+    .join(route_master, trips["route_id"] == route_master["route_id_def"], how="left")
     .drop("route_id_def")
-    .select([
-        # Identifiers
-        "trip_no", "vehicle_no", "driver_name", "driver_no",
-        "route_id", "party_name", "city", "company",
-        # Dates
-        "trip_start_date", "trip_start_time", "trip_closing_time",
-        "return_date", "posting_date", "item_no",
-        # Timestamps
-        "logistics_yard_in_time", "loading_point_in_time", "loading_point_out_time",
-        "unloading_point_in_time", "unloading_point_out_time",
-        # TAT / on-time
-        "tat_kilometer", "ontime", "total_stoppage_time",
-        "halt_start_date_time", "last_halt_date_time",
-        # Odometer & fuel
-        "kilometer_out", "kilometer_in",
-        "diesel", "diesel_consumed", "disel_balance",
-        "fuel_available_in_ltr", "diesel_issue_location",
-        # Weights
-        "gross_weight", "net_weight", "tare_weight",
-        # Flags
-        "trip_type", "type_of_movement", "logistic_operation",
-        "trip_close", "trip_clossing_type", "status",
-        # Computed metrics
-        "total_kms", "fuel_efficiency_km_l",
-        "yard_to_loading_hrs", "loading_time_hrs", "transit_time_hrs",
-        "unloading_time_hrs", "return_time_hrs", "total_trip_duration_hrs",
-        "journey_time_hrs", "idle_time_hrs",
-        # Route definitions
-        "defined_tat_hrs", "defined_diesel_quantity",
-        "defined_trip_allowance", "defined_management_fees",
-        "defined_diesel_location",
-    ])
 )
 
 # -----------------------------------------------------------------------------
-# 10. FULL OVERWRITE INTO DELTA TABLE
-#     Every 3hrs run replaces the entire table with fresh active trips.
+# 11. COMPUTE ONTIME  (replaces unreliable NAV FlowField — always 0 in SQL)
+#
+#  Logic (all arithmetic in milliseconds — no timezone risk):
+#
+#    defined_tat_ms  = defined_tat_hrs  * 3_600_000
+#    elapsed_ms      = pipeline_now_ms  - unix_ms(trip_start_time)
+#
+#    ontime = 1  →  elapsed_ms  <=  defined_tat_ms   (within TAT)
+#    ontime = 0  →  elapsed_ms  >   defined_tat_ms   (TAT breached)
+#    ontime = NULL → trip_start_time missing OR defined_tat_hrs = 0/NULL
+#
+#  tat_breach_hrs = (elapsed_ms - defined_tat_ms) / 3_600_000
+#    positive = hours OVER TAT
+#    negative = hours still remaining inside TAT
+#
+#  tat_risk_status — early warning band:
+#    BREACHED  : elapsed > TAT
+#    AT RISK   : elapsed > 75% of TAT  (15-min-style early warning)
+#    ON TRACK  : elapsed <= 75% of TAT
+# -----------------------------------------------------------------------------
+trips = (
+    trips
+
+    # TAT in milliseconds (from route master — defined_tat_hrs is actually hours)
+    .withColumn("defined_tat_ms",
+        F.when(
+            F.col("defined_tat_hrs").isNotNull() &
+            (F.col("defined_tat_hrs").cast("double") > 0),
+            (F.col("defined_tat_hrs").cast("double") * 3_600_000).cast("long")
+        ).otherwise(F.lit(None).cast("long"))
+    )
+
+    # Ontime flag  (1 = on time, 0 = late, NULL = cannot determine)
+    .withColumn("ontime",
+        F.when(
+            F.col("elapsed_ms").isNotNull() & F.col("defined_tat_ms").isNotNull(),
+            F.when(F.col("elapsed_ms") <= F.col("defined_tat_ms"), F.lit(1))
+             .otherwise(F.lit(0))
+        ).otherwise(F.lit(None).cast("integer"))
+    )
+
+    # How many hours over/under TAT  (positive = overdue, negative = still within)
+    .withColumn("tat_breach_hrs",
+        F.when(
+            F.col("elapsed_ms").isNotNull() & F.col("defined_tat_ms").isNotNull(),
+            F.round(
+                (F.col("elapsed_ms") - F.col("defined_tat_ms")) / 3_600_000.0, 2
+            )
+        ).otherwise(F.lit(None).cast("double"))
+    )
+
+    # Human-readable risk status for dashboards
+    .withColumn("tat_risk_status",
+        F.when(F.col("defined_tat_ms").isNull(),  F.lit("NO TAT DEFINED"))
+        .when(F.col("elapsed_ms").isNull(),        F.lit("NO START TIME"))
+        .when(F.col("elapsed_ms") > F.col("defined_tat_ms"),
+              F.lit("BREACHED"))
+        .when(F.col("elapsed_ms") > (F.col("defined_tat_ms") * 0.75).cast("long"),
+              F.lit("AT RISK"))
+        .otherwise(F.lit("ON TRACK"))
+    )
+
+    # -------------------------------------------------------------------------
+    # AUDIT COLUMN — when did this pipeline run process this row?
+    # Stored as UTC timestamp string (ISO 8601) for unambiguous cross-timezone
+    # reporting in Superset.
+    # -------------------------------------------------------------------------
+    .withColumn("last_data_processed_timestamp",
+        F.lit(pipeline_now_iso).cast("string")
+    )
+)
+
+# -----------------------------------------------------------------------------
+# 12. FINAL COLUMN SELECTION & ORDERING
+# -----------------------------------------------------------------------------
+final_df = trips.select([
+    # --- Identifiers ---
+    "trip_no", "vehicle_no", "driver_name", "driver_no",
+    "route_id", "party_name", "city", "company",
+
+    # --- Dates ---
+    "trip_start_date", "trip_start_time", "trip_closing_time",
+    "return_date", "posting_date", "item_no",
+
+    # --- Gate timestamps ---
+    "logistics_yard_in_time", "loading_point_in_time", "loading_point_out_time",
+    "unloading_point_in_time", "unloading_point_out_time",
+
+    # --- TAT / ontime ---
+    "tat_kilometer",
+    "ontime_nav",                  # raw NAV value (always 0) — kept for audit
+    "ontime",                      # ✅ recalculated: 1=on-time, 0=late, NULL=unknown
+    "tat_breach_hrs",              # ✅ hours over(+) or under(-) TAT
+    "tat_risk_status",             # ✅ ON TRACK / AT RISK / BREACHED / NO TAT DEFINED
+    "hrs_elapsed_so_far",          # ✅ hours since trip started (as of this pipeline run)
+    "total_stoppage_time",
+    "halt_start_date_time", "last_halt_date_time",
+
+    # --- Odometer & fuel ---
+    "kilometer_out", "kilometer_in",
+    "diesel", "diesel_consumed", "disel_balance",
+    "fuel_available_in_ltr", "diesel_issue_location",
+
+    # --- Weights ---
+    "gross_weight", "net_weight", "tare_weight",
+
+    # --- Flags ---
+    "trip_type", "type_of_movement", "logistic_operation",
+    "trip_close", "trip_clossing_type", "status",
+
+    # --- Computed trip metrics ---
+    "total_kms", "fuel_efficiency_km_l",
+    "yard_to_loading_hrs", "loading_time_hrs", "transit_time_hrs",
+    "unloading_time_hrs", "return_time_hrs", "total_trip_duration_hrs",
+    "journey_time_hrs", "idle_time_hrs",
+
+    # --- Route definitions ---
+    "defined_tat_hrs", "defined_tat_ms", "defined_diesel_quantity",
+    "defined_trip_allowance", "defined_management_fees", "defined_diesel_location",
+
+    # --- Audit ---
+    "last_data_processed_timestamp",   # ✅ UTC ISO timestamp of this pipeline run
+])
+
+# -----------------------------------------------------------------------------
+# 13. FULL OVERWRITE INTO DELTA TABLE
+#     Every 3-hr run replaces the entire table with fresh active trips.
 #     No watermark needed — always reflects current snapshot of open trips.
 # -----------------------------------------------------------------------------
 spark.sql("CREATE SCHEMA IF NOT EXISTS logistics")
@@ -273,10 +428,28 @@ print(f"Overwriting {TABLE_NAME} with {total_count:,} active trips...")
 print(f"✅ Overwrite complete — {total_count:,} rows written to {TABLE_NAME}")
 
 # -----------------------------------------------------------------------------
-# 11. DONE
+# 14. QUICK VALIDATION — print ontime distribution for this run
 # -----------------------------------------------------------------------------
-print(f"Run ID : {run_id}")
-print(f"Table  : {TABLE_NAME}")
+print("\n--- Ontime Distribution (this run) ---")
+final_df.groupBy("ontime", "tat_risk_status").count().orderBy("ontime").show()
+
+print("\n--- Sample: trips AT RISK or BREACHED ---")
+final_df.filter(
+    F.col("tat_risk_status").isin("AT RISK", "BREACHED")
+).select(
+    "trip_no", "vehicle_no", "route_id",
+    "hrs_elapsed_so_far", "defined_tat_hrs",
+    "tat_breach_hrs", "tat_risk_status",
+    "last_data_processed_timestamp"
+).orderBy(F.col("tat_breach_hrs").desc()).show(20, truncate=False)
+
+# -----------------------------------------------------------------------------
+# 15. DONE
+# -----------------------------------------------------------------------------
+print(f"\nRun ID                        : {run_id}")
+print(f"Table                         : {TABLE_NAME}")
+print(f"Pipeline capture time (UTC)   : {pipeline_now_iso}")
+print(f"Pipeline capture time (ms)    : {pipeline_now_ms}")
 print("Active trips load completed successfully.")
 
 spark.stop()
