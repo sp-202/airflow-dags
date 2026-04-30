@@ -375,6 +375,9 @@ final_df = trips.select([
     "logistics_yard_in_time", "loading_point_in_time", "loading_point_out_time",
     "unloading_point_in_time", "unloading_point_out_time",
 
+    # --- Current Location ---
+    "current_location",
+
     # --- TAT / ontime ---
     "tat_kilometer",
     "ontime_nav",                  # raw NAV value (always 0) — kept for audit
