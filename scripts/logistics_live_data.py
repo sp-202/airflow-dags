@@ -10,6 +10,8 @@
 #             Pipeline capture time is used as "now" so every run is consistent.
 #   - last_data_processed_timestamp: new column recording exactly when this
 #             pipeline run processed the row (UTC, millisecond precision).
+#   - item_description: joined from ANRML$Item table via item_no to bring in
+#             the human-readable item name alongside item_no.
 # =============================================================================
 
 import os
@@ -89,7 +91,33 @@ print(f"Pipeline capture time (UTC) : {pipeline_now_iso}")
 print(f"Pipeline capture time (ms)  : {pipeline_now_ms}")
 
 # -----------------------------------------------------------------------------
-# 6. READ ACTIVE TRIPS FROM SQL SERVER
+# 6. READ ITEM MASTER — maps item_no → item_description
+#    FIX: was using undefined `props`; corrected to `jdbc_props`.
+#    Only 3 columns fetched to keep the payload minimal (small table).
+# -----------------------------------------------------------------------------
+item_df_query = """
+(
+    SELECT
+        [Base Unit of Measure] AS uom,
+        [No_]                  AS item_no,
+        [Description]          AS item_description
+    FROM [dbo].[ANRML$Item]
+) t
+"""
+
+item_df = (
+    spark.read.jdbc(
+        url=jdbc_url,
+        table=item_df_query,
+        properties=jdbc_props,          # ← fixed: was `props`
+    )
+    .select("item_no", "item_description", "uom")   # only what we need
+)
+
+print(f"Item master rows loaded: {item_df.count():,}")
+
+# -----------------------------------------------------------------------------
+# 7. READ ACTIVE TRIPS FROM SQL SERVER
 #    Filters pushed down to SQL Server to minimise JDBC payload:
 #      - Trip Close      = 0  → trip is still open/active
 #      - Logistic Operation = 1
@@ -122,7 +150,7 @@ if total_count == 0:
     exit(0)
 
 # -----------------------------------------------------------------------------
-# 7. READ ROUTE MASTER (always fresh — small table)
+# 8. READ ROUTE MASTER (always fresh — small table)
 #    Takes the LATEST definition per route (most recent Starting Date).
 # -----------------------------------------------------------------------------
 route_window = Window.partitionBy("Route ID").orderBy(F.col("Starting Date").desc())
@@ -148,7 +176,7 @@ route_master = (
 )
 
 # -----------------------------------------------------------------------------
-# 8. SELECT & RENAME TRIP COLUMNS
+# 9. SELECT & RENAME TRIP COLUMNS
 # -----------------------------------------------------------------------------
 trips = raw_trips.select(
     F.col("Trip No").alias("trip_no"),
@@ -211,7 +239,27 @@ trips = raw_trips.select(
 )
 
 # -----------------------------------------------------------------------------
-# 9. COMPUTE DERIVED METRICS
+# 10. JOIN WITH ITEM MASTER — enrich item_no with item_description & uom
+#     Left join so trips with an unrecognised / missing item_no are kept.
+#     item_df column "item_no" is renamed before join to avoid ambiguity,
+#     then dropped after the join.
+# -----------------------------------------------------------------------------
+item_lookup = item_df.select(
+    F.col("item_no").alias("_item_no_key"),
+    F.col("item_description"),
+    F.col("uom"),
+)
+
+trips = (
+    trips
+    .join(item_lookup, trips["item_no"] == item_lookup["_item_no_key"], how="left")
+    .drop("_item_no_key")
+)
+
+print("Item description joined to trips.")
+
+# -----------------------------------------------------------------------------
+# 11. COMPUTE DERIVED METRICS
 # -----------------------------------------------------------------------------
 def hrs_diff(start_col, end_col):
     """Returns fractional hours between two timestamp columns."""
@@ -251,13 +299,6 @@ trips = (
 
     # -------------------------------------------------------------------------
     # LIVE ELAPSED TIME (millisecond-precision, timezone-safe)
-    #
-    # Formula:
-    #   elapsed_ms = pipeline_now_ms  -  (unix_timestamp(trip_start_time) * 1000)
-    #
-    # Both sides are UTC epoch milliseconds → no local time ambiguity.
-    # pipeline_now_ms is captured ONCE at pipeline start (Step 5) so every
-    # row in this run uses the identical "now" reference.
     # -------------------------------------------------------------------------
     .withColumn("trip_start_ms",
         (F.unix_timestamp(F.col("trip_start_time")) * 1000).cast("long"))
@@ -278,7 +319,7 @@ trips = (
 )
 
 # -----------------------------------------------------------------------------
-# 10. JOIN WITH ROUTE MASTER (brings in defined_tat_hrs per route)
+# 12. JOIN WITH ROUTE MASTER (brings in defined_tat_hrs per route)
 # -----------------------------------------------------------------------------
 trips = (
     trips
@@ -287,30 +328,11 @@ trips = (
 )
 
 # -----------------------------------------------------------------------------
-# 11. COMPUTE ONTIME  (replaces unreliable NAV FlowField — always 0 in SQL)
-#
-#  Logic (all arithmetic in milliseconds — no timezone risk):
-#
-#    defined_tat_ms  = defined_tat_hrs  * 3_600_000
-#    elapsed_ms      = pipeline_now_ms  - unix_ms(trip_start_time)
-#
-#    ontime = 1  →  elapsed_ms  <=  defined_tat_ms   (within TAT)
-#    ontime = 0  →  elapsed_ms  >   defined_tat_ms   (TAT breached)
-#    ontime = NULL → trip_start_time missing OR defined_tat_hrs = 0/NULL
-#
-#  tat_breach_hrs = (elapsed_ms - defined_tat_ms) / 3_600_000
-#    positive = hours OVER TAT
-#    negative = hours still remaining inside TAT
-#
-#  tat_risk_status — early warning band:
-#    BREACHED  : elapsed > TAT
-#    AT RISK   : elapsed > 75% of TAT  (15-min-style early warning)
-#    ON TRACK  : elapsed <= 75% of TAT
+# 13. COMPUTE ONTIME  (replaces unreliable NAV FlowField — always 0 in SQL)
 # -----------------------------------------------------------------------------
 trips = (
     trips
 
-    # TAT in milliseconds (from route master — defined_tat_hrs is actually hours)
     .withColumn("defined_tat_ms",
         F.when(
             F.col("defined_tat_hrs").isNotNull() &
@@ -319,7 +341,6 @@ trips = (
         ).otherwise(F.lit(None).cast("long"))
     )
 
-    # Ontime flag  (1 = on time, 0 = late, NULL = cannot determine)
     .withColumn("ontime",
         F.when(
             F.col("elapsed_ms").isNotNull() & F.col("defined_tat_ms").isNotNull(),
@@ -328,7 +349,6 @@ trips = (
         ).otherwise(F.lit(None).cast("integer"))
     )
 
-    # How many hours over/under TAT  (positive = overdue, negative = still within)
     .withColumn("tat_breach_hrs",
         F.when(
             F.col("elapsed_ms").isNotNull() & F.col("defined_tat_ms").isNotNull(),
@@ -338,7 +358,6 @@ trips = (
         ).otherwise(F.lit(None).cast("double"))
     )
 
-    # Human-readable risk status for dashboards
     .withColumn("tat_risk_status",
         F.when(F.col("defined_tat_ms").isNull(),  F.lit("NO TAT DEFINED"))
         .when(F.col("elapsed_ms").isNull(),        F.lit("NO START TIME"))
@@ -349,18 +368,14 @@ trips = (
         .otherwise(F.lit("ON TRACK"))
     )
 
-    # -------------------------------------------------------------------------
-    # AUDIT COLUMN — when did this pipeline run process this row?
-    # Stored as UTC timestamp string (ISO 8601) for unambiguous cross-timezone
-    # reporting in Superset.
-    # -------------------------------------------------------------------------
     .withColumn("last_data_processed_timestamp",
         F.lit(pipeline_now_iso).cast("string")
     )
 )
 
 # -----------------------------------------------------------------------------
-# 12. FINAL COLUMN SELECTION & ORDERING
+# 14. FINAL COLUMN SELECTION & ORDERING
+#     item_description and uom are placed right after item_no for readability.
 # -----------------------------------------------------------------------------
 final_df = trips.select([
     # --- Identifiers ---
@@ -369,7 +384,12 @@ final_df = trips.select([
 
     # --- Dates ---
     "trip_start_date", "trip_start_time", "trip_closing_time",
-    "return_date", "posting_date", "item_no",
+    "return_date", "posting_date",
+
+    # --- Item (enriched) ---
+    "item_no",
+    "item_description",     # ✅ human-readable name from ANRML$Item
+    "uom",                  # ✅ base unit of measure from ANRML$Item
 
     # --- Gate timestamps ---
     "logistics_yard_in_time", "loading_point_in_time", "loading_point_out_time",
@@ -380,11 +400,11 @@ final_df = trips.select([
 
     # --- TAT / ontime ---
     "tat_kilometer",
-    "ontime_nav",                  # raw NAV value (always 0) — kept for audit
-    "ontime",                      # ✅ recalculated: 1=on-time, 0=late, NULL=unknown
-    "tat_breach_hrs",              # ✅ hours over(+) or under(-) TAT
-    "tat_risk_status",             # ✅ ON TRACK / AT RISK / BREACHED / NO TAT DEFINED
-    "hrs_elapsed_so_far",          # ✅ hours since trip started (as of this pipeline run)
+    "ontime_nav",
+    "ontime",
+    "tat_breach_hrs",
+    "tat_risk_status",
+    "hrs_elapsed_so_far",
     "total_stoppage_time",
     "halt_start_date_time", "last_halt_date_time",
 
@@ -411,13 +431,11 @@ final_df = trips.select([
     "defined_trip_allowance", "defined_management_fees", "defined_diesel_location",
 
     # --- Audit ---
-    "last_data_processed_timestamp",   # ✅ UTC ISO timestamp of this pipeline run
+    "last_data_processed_timestamp",
 ])
 
 # -----------------------------------------------------------------------------
-# 13. FULL OVERWRITE INTO DELTA TABLE
-#     Every 3-hr run replaces the entire table with fresh active trips.
-#     No watermark needed — always reflects current snapshot of open trips.
+# 15. FULL OVERWRITE INTO DELTA TABLE
 # -----------------------------------------------------------------------------
 spark.sql("CREATE SCHEMA IF NOT EXISTS logistics")
 
@@ -434,7 +452,7 @@ print(f"Overwriting {TABLE_NAME} with {total_count:,} active trips...")
 print(f"✅ Overwrite complete — {total_count:,} rows written to {TABLE_NAME}")
 
 # -----------------------------------------------------------------------------
-# 14. QUICK VALIDATION — print ontime distribution for this run
+# 16. QUICK VALIDATION
 # -----------------------------------------------------------------------------
 print("\n--- Ontime Distribution (this run) ---")
 final_df.groupBy("ontime", "tat_risk_status").count().orderBy("ontime").show()
@@ -450,7 +468,7 @@ final_df.filter(
 ).orderBy(F.col("tat_breach_hrs").desc()).show(20, truncate=False)
 
 # -----------------------------------------------------------------------------
-# 15. DONE
+# 17. DONE
 # -----------------------------------------------------------------------------
 print(f"\nRun ID                        : {run_id}")
 print(f"Table                         : {TABLE_NAME}")
