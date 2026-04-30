@@ -161,7 +161,7 @@ trips = raw_trips.select(
     F.col("Company").alias("company"),
 
     # Current Location
-    F.trim(F.col("Current Location")).alias("current_location"),
+    F.trim(F.col("Address")).alias("current_location"),
 
     # Dates & times
     F.col("Trip Start Date").cast("timestamp").alias("trip_start_date"),
