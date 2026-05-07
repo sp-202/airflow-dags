@@ -64,6 +64,7 @@ spark = SparkSession.builder \
 
 spark.conf.set("spark.sql.repl.eagerEval.enabled", True)
 spark.conf.set("spark.sql.repl.eagerEval.maxNumRows", 10)
+spark.conf.set("spark.sql.session.timeZone", "Africa/Lagos")  # WAT = UTC+1
 
 print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
 
@@ -206,9 +207,9 @@ trips = raw_trips.select(
     F.col("Unloading Point in Time").cast("timestamp").alias("unloading_point_in_time"),
     F.col("Unloading Point out Time").cast("timestamp").alias("unloading_point_out_time"),
 
-    # TAT / on-time (raw NAV fields — ontime=0 always from SQL, will be recalculated below)
+    # TAT / on-time
     F.col("TAT Kilometer").alias("tat_kilometer"),
-    F.col("Ontime").alias("ontime_nav"),                  # kept for audit; renamed to avoid confusion
+    F.col("Ontime").alias("ontime_nav"),
     F.col("Total Stoppage Time").alias("total_stoppage_time"),
     F.col("Halt Start Date Time").cast("timestamp").alias("halt_start_date_time"),
     F.col("Last Halt Date Time").alias("last_halt_date_time"),
@@ -236,6 +237,15 @@ trips = raw_trips.select(
     F.col("Trip Close").alias("trip_close"),
     F.col("Trip Clossing Type").alias("trip_clossing_type"),
     F.col("Status").alias("status"),
+
+    # misc
+    F.col("TAT Breach Reason").alias("tat_breach_reason"),
+    F.col("Way Bill No_").alias("way_bill_no"),
+    F.col("Heavy Equipment Code").alias("heavy_equipment_code"),
+    F.col("Linked Trip ID").alias("linked_trip_id"),
+    F.col("Lineked MRN No_").alias("linked_mrn_no"),      # note typo in source — "Lineked"
+    F.col("Linked Sales Shipment No_").alias("linked_sales_shipment_no"),
+    F.col("No_").alias("no_")
 )
 
 # -----------------------------------------------------------------------------
@@ -283,9 +293,16 @@ trips = (
     .withColumn("unloading_time_hrs",      hrs_diff("unloading_point_in_time", "unloading_point_out_time"))
     .withColumn("return_time_hrs",         hrs_diff("unloading_point_out_time","logistics_yard_in_time"))
     .withColumn("total_trip_duration_hrs", hrs_diff("trip_start_time",         "logistics_yard_in_time"))
-    .withColumn("journey_time_hrs",        hrs_diff("loading_point_out_time",  "unloading_point_out_time"))
+
+    # ✅ CORRECTED — journey_time = yard_to_loading + transit + return
+    .withColumn("journey_time_hrs",
+        F.col("yard_to_loading_hrs")
+        + F.col("transit_time_hrs")
+        + F.col("return_time_hrs"))
+
+    # ✅ CORRECTED — idle_time = loading + unloading
     .withColumn("idle_time_hrs",
-        F.col("total_trip_duration_hrs") - F.col("journey_time_hrs"))
+        F.col("loading_time_hrs") + F.col("unloading_time_hrs"))
 
     # --- Round all hour columns to 2 dp ---
     .withColumn("yard_to_loading_hrs",     F.round(F.col("yard_to_loading_hrs"),     2))
@@ -429,6 +446,13 @@ final_df = trips.select([
     # --- Route definitions ---
     "defined_tat_hrs", "defined_tat_ms", "defined_diesel_quantity",
     "defined_trip_allowance", "defined_management_fees", "defined_diesel_location",
+
+    # misc
+    "tat_breach_reason",
+    "way_bill_no", "heavy_equipment_code",
+    "linked_trip_id", "linked_mrn_no",
+    "linked_sales_shipment_no",
+    "no_",
 
     # --- Audit ---
     "last_data_processed_timestamp",
