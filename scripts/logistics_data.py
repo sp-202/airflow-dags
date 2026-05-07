@@ -340,25 +340,22 @@ trips = (
             (F.col("kilometer_in") - F.col("kilometer_out")) / F.col("diesel_consumed")
         ).otherwise(None).cast("decimal(35,2)"))
 
-    # ✅ Use trip_start_time for logistic_yard_out_time as the true trip start
     .withColumn("yard_to_loading_hrs",     hrs_diff("trip_start_time",  "loading_point_in_time"))
     .withColumn("loading_time_hrs",        hrs_diff("loading_point_in_time",   "loading_point_out_time"))
     .withColumn("transit_time_hrs",        hrs_diff("loading_point_out_time",  "unloading_point_in_time"))
     .withColumn("unloading_time_hrs",      hrs_diff("unloading_point_in_time", "unloading_point_out_time"))
     .withColumn("return_time_hrs",         hrs_diff("unloading_point_out_time","logistics_yard_in_time"))
-
-    # ✅ Total = yard out → yard in
     .withColumn("total_trip_duration_hrs", hrs_diff("trip_start_time",  "logistics_yard_in_time"))
 
-    # ✅ Journey = Total − Loading − Unloading
+    # ✅ CORRECTED — journey_time = yard_to_loading + transit + return (NOT total - loading - unloading)
     .withColumn("journey_time_hrs",
-        F.col("total_trip_duration_hrs")
-        - F.col("loading_time_hrs")
-        - F.col("unloading_time_hrs"))
+        F.col("yard_to_loading_hrs") 
+        + F.col("transit_time_hrs") 
+        + F.col("return_time_hrs"))
 
-    # ✅ Idle = Total − Journey
+    # ✅ CORRECTED — idle_time = loading + unloading (NOT total - journey)
     .withColumn("idle_time_hrs",
-        F.col("total_trip_duration_hrs") - F.col("journey_time_hrs"))
+        F.col("loading_time_hrs") + F.col("unloading_time_hrs"))
 
     # Rounding
     .withColumn("yard_to_loading_hrs",     F.round(F.col("yard_to_loading_hrs"),     2))
