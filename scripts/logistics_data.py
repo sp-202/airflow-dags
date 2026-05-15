@@ -436,7 +436,7 @@ incremental_final_df = (
         "defined_trip_allowance", "defined_management_fees",
         "defined_diesel_location",
         # mics
-        "tat_breach_reason", maintenance_time_hrs,
+        "tat_breach_reason", "maintenance_time_hrs",
         "way_bill_no", "heavy_equipment_code",
         "linked_trip_id", "linked_mrn_no",
         "linked_sales_shipment_no",
