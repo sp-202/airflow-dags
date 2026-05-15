@@ -251,6 +251,29 @@ route_master = (
     )
 )
 
+# TAT Breach Reason Map
+tat_breach_map = {
+    0: "Traffic",
+    1: "Breakdown",
+    2: "Accident",
+    3: "EFCC/FRSC Issue",
+    4: "Diesel Issue",
+    5: "Loading Issue",
+    6: "Offloading Issue",
+    7: "Driver Issue"
+}
+
+def decode_bitmask(value):
+    if value is None:
+        return None
+    return ", ".join(
+        label 
+        for bit, label in tat_breach_map.items() 
+        if value & (1 << bit)
+    )
+
+decode_bitmask_udf = F.udf(decode_bitmask, StringType())
+
 # -----------------------------------------------------------------------------
 # 10. SELECT & RENAME TRIP COLUMNS
 # -----------------------------------------------------------------------------
@@ -311,7 +334,7 @@ trips = raw_trips.select(
     F.col("Status").alias("status"),
 
     # misc
-    F.col("TAT Breach Reason").alias("tat_breach_reason"),
+    decode_bitmask_udf(F.col("TAT Breach Reason").cast("int")).alias("tat_breach_reason"),
     F.col("Way Bill No_").alias("way_bill_no"),
     F.col("Heavy Equipment Code").alias("heavy_equipment_code"),
     F.col("Linked Trip ID").alias("linked_trip_id"),
