@@ -335,6 +335,7 @@ trips = raw_trips.select(
 
     # misc
     decode_bitmask_udf(F.col("TAT Breach Reason").cast("int")).alias("tat_breach_reason"),
+    F.col("Maintenance Time Hrs").alias("maintenance_time_hrs"),
     F.col("Way Bill No_").alias("way_bill_no"),
     F.col("Heavy Equipment Code").alias("heavy_equipment_code"),
     F.col("Linked Trip ID").alias("linked_trip_id"),
@@ -434,7 +435,7 @@ incremental_final_df = (
         "defined_trip_allowance", "defined_management_fees",
         "defined_diesel_location",
         # mics
-        "tat_breach_reason",
+        "tat_breach_reason", maintenance_time_hrs,
         "way_bill_no", "heavy_equipment_code",
         "linked_trip_id", "linked_mrn_no",
         "linked_sales_shipment_no",
