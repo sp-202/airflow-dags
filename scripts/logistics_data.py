@@ -9,6 +9,9 @@
 #     table is missing item_description column → rewrites the entire table
 #     with the new columns populated (one-time schema migration + backfill).
 #     All subsequent runs skip the backfill and proceed with normal MERGE.
+#   - Timezone fix: MS SQL Server stores timestamps in UTC, but data is entered
+#     in WAT (UTC+1). All timestamps are converted UTC → WAT after JDBC read
+#     so Delta stores WAT. Watermark is converted WAT → UTC before SQL filter.
 # =============================================================================
 
 import os
@@ -62,6 +65,7 @@ spark = SparkSession.builder \
 
 spark.conf.set("spark.sql.repl.eagerEval.enabled", True)
 spark.conf.set("spark.sql.repl.eagerEval.maxNumRows", 10)
+# Delta stores WAT → display in WAT
 spark.conf.set("spark.sql.session.timeZone", "Africa/Lagos")  # WAT = UTC+1
 
 print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
@@ -71,6 +75,24 @@ print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
 # -----------------------------------------------------------------------------
 TABLE_NAME = "logistics.raw_data"
 MERGE_KEY  = "trip_no"
+
+# Timezone constant — SQL Server stores UTC, business operates in WAT (UTC+1)
+WAT_TZ = "Africa/Lagos"
+
+# All timestamp columns that need UTC → WAT conversion
+TIMESTAMP_COLS = [
+    "Trip Start Date",
+    "Trip Start Time",
+    "Trip Closing Time",
+    "Return Date",
+    "Posting Date",
+    "Logistics Yard in Time",
+    "Loading Point in Time",
+    "Loading Point out Time",
+    "Unloading Point in Time",
+    "Unloading Point out Time",
+    "Halt Start Date Time",
+]
 
 # -----------------------------------------------------------------------------
 # 5. READ ITEM MASTER — always fresh (small table)
@@ -159,10 +181,9 @@ if needs_backfill:
     for c in all_cols:
         ordered_cols.append(c)
         if c == "item_no":
-            # insert new columns immediately after item_no
             ordered_cols.extend(["item_description", "uom"])
 
-    # Deduplicate (item_no itself might appear again via join artifact)
+    # Deduplicate
     seen = set()
     final_ordered = []
     for c in ordered_cols:
@@ -179,7 +200,7 @@ if needs_backfill:
         backfilled_df.write
         .format("delta")
         .mode("overwrite")
-        .option("overwriteSchema", "true")   # ← extends Delta schema with new columns
+        .option("overwriteSchema", "true")
         .saveAsTable(TABLE_NAME)
     )
 
@@ -187,22 +208,34 @@ if needs_backfill:
 
 # -----------------------------------------------------------------------------
 # 7. WATERMARK — get the latest trip_closing_time already in the Delta table
+#
+#    Delta stores WAT timestamps. SQL Server expects UTC.
+#    So we read the WAT watermark and subtract 1 hour → UTC for the SQL filter.
 # -----------------------------------------------------------------------------
 try:
     last_closing_time_raw = spark.sql(
         f"SELECT MAX(trip_closing_time) FROM {TABLE_NAME}"
     ).collect()[0][0]
+
     if last_closing_time_raw is None:
-        last_closing_time = "1900-01-01 00:00:00"
+        # No data yet — full load from beginning
+        last_closing_time_utc = "1900-01-01 00:00:00"
+        print("No watermark found — performing full initial load.")
     else:
-        last_closing_time = last_closing_time_raw.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"Watermark — last trip_closing_time in Delta: {last_closing_time}")
+        # Delta stores WAT → convert back to UTC for SQL Server filter
+        # WAT = UTC+1, so UTC = WAT - 1 hour
+        last_closing_time_utc_dt = last_closing_time_raw - datetime.timedelta(hours=1)
+        last_closing_time_utc = last_closing_time_utc_dt.strftime("%Y-%m-%d %H:%M:%S")
+        print(f"Watermark (WAT in Delta) : {last_closing_time_raw}")
+        print(f"Watermark (UTC for SQL)  : {last_closing_time_utc}")
+
 except Exception:
-    last_closing_time = "1900-01-01 00:00:00"
+    last_closing_time_utc = "1900-01-01 00:00:00"
     print("Target table not found — performing full initial load.")
 
 # -----------------------------------------------------------------------------
 # 8. READ INCREMENTAL TRIPS FROM SQL SERVER
+#    Filter uses UTC timestamp since SQL Server stores in UTC.
 # -----------------------------------------------------------------------------
 incremental_trips_query = f"""
 (
@@ -210,7 +243,7 @@ incremental_trips_query = f"""
     FROM [dbo].[ANRML$RGP_NRGP Header]
     WHERE [Trip Close] = 1
       AND [Type]       = 1
-      AND [Trip Closing Time] > CONVERT(DATETIME, '{last_closing_time}', 120)
+      AND [Trip Closing Time] > CONVERT(DATETIME, '{last_closing_time_utc}', 120)
 ) t
 """
 
@@ -221,12 +254,28 @@ raw_trips = spark.read.jdbc(
 )
 
 incremental_count = raw_trips.count()
-print(f"New / updated trips fetched from SQL Server: {incremental_count}")
+print(f"New / updated trips fetched from SQL Server: {incremental_count:,}")
 
 if incremental_count == 0:
     print("No new trips found. Nothing to merge.")
     spark.stop()
     exit(0)
+
+# -----------------------------------------------------------------------------
+# 8b. CONVERT TIMESTAMPS UTC → WAT
+#     SQL Server stores all timestamps in UTC.
+#     Business operates in WAT (UTC+1, Africa/Lagos).
+#     We convert here so Delta stores WAT — consistent with business reporting.
+# -----------------------------------------------------------------------------
+print("Converting timestamps UTC → WAT (Africa/Lagos)...")
+for col_name in TIMESTAMP_COLS:
+    if col_name in raw_trips.columns:
+        raw_trips = raw_trips.withColumn(
+            col_name,
+            F.from_utc_timestamp(F.col(col_name).cast("timestamp"), WAT_TZ)
+        )
+
+print("✅ Timestamp conversion complete.")
 
 # -----------------------------------------------------------------------------
 # 9. READ ROUTE MASTER (always fresh — small table)
@@ -268,11 +317,12 @@ def decode_bitmask(value):
     if value is None:
         return None
     return ", ".join(
-        label 
-        for bit, label in tat_breach_map.items() 
+        label
+        for bit, label in tat_breach_map.items()
         if value & (1 << bit)
     )
 
+from pyspark.sql.types import StringType
 decode_bitmask_udf = F.udf(decode_bitmask, StringType())
 
 # -----------------------------------------------------------------------------
@@ -288,7 +338,7 @@ trips = raw_trips.select(
     F.col("City").alias("city"),
     F.col("Company").alias("company"),
 
-    # Dates & times
+    # Dates & times — already converted to WAT in step 8b
     F.col("Trip Start Date").cast("timestamp").alias("trip_start_date"),
     F.col("Trip Start Time").cast("timestamp").alias("trip_start_time"),
     F.col("Trip Closing Time").cast("timestamp").alias("trip_closing_time"),
@@ -352,6 +402,8 @@ trips = enrich_with_item(trips, item_df)
 
 # -----------------------------------------------------------------------------
 # 12. COMPUTE DERIVED METRICS
+#     Timestamps are now in WAT — hrs_diff uses unix_timestamp which is
+#     timezone-aware, so differences are still correct in hours.
 # -----------------------------------------------------------------------------
 def hrs_diff(start_col, end_col):
     return (F.unix_timestamp(F.col(end_col)) - F.unix_timestamp(F.col(start_col))) / 3600.0
@@ -372,13 +424,13 @@ trips = (
     .withColumn("return_time_hrs",         hrs_diff("unloading_point_out_time","logistics_yard_in_time"))
     .withColumn("total_trip_duration_hrs", hrs_diff("trip_start_time",  "logistics_yard_in_time"))
 
-    # ✅ CORRECTED — journey_time = yard_to_loading + transit + return (NOT total - loading - unloading)
+    # journey_time = yard_to_loading + transit + return
     .withColumn("journey_time_hrs",
-        F.col("yard_to_loading_hrs") 
-        + F.col("transit_time_hrs") 
+        F.col("yard_to_loading_hrs")
+        + F.col("transit_time_hrs")
         + F.col("return_time_hrs"))
 
-    # ✅ CORRECTED — idle_time = loading + unloading (NOT total - journey)
+    # idle_time = loading + unloading
     .withColumn("idle_time_hrs",
         F.col("loading_time_hrs") + F.col("unloading_time_hrs"))
 
@@ -404,14 +456,14 @@ incremental_final_df = (
         # Identifiers
         "trip_no", "vehicle_no", "driver_name", "driver_no",
         "route_id", "party_name", "city", "company",
-        # Dates
+        # Dates — stored in WAT ✅
         "trip_start_date", "trip_start_time", "trip_closing_time",
         "return_date", "posting_date",
         # Item (enriched)
         "item_no",
-        "item_description",     # ✅ from ANRML$Item
-        "uom",                  # ✅ from ANRML$Item
-        # Timestamps
+        "item_description",
+        "uom",
+        # Timestamps — stored in WAT ✅
         "logistics_yard_in_time", "loading_point_in_time", "loading_point_out_time",
         "unloading_point_in_time", "unloading_point_out_time",
         # TAT / on-time
@@ -435,7 +487,7 @@ incremental_final_df = (
         "defined_tat_hrs", "defined_diesel_quantity",
         "defined_trip_allowance", "defined_management_fees",
         "defined_diesel_location",
-        # mics
+        # Misc
         "tat_breach_reason", "maintenance_time_hrs",
         "way_bill_no", "heavy_equipment_code",
         "linked_trip_id", "linked_mrn_no",
@@ -446,11 +498,8 @@ incremental_final_df = (
 
 # -----------------------------------------------------------------------------
 # 14. MERGE INTO DELTA TABLE (upsert on trip_no)
-#     Schema is guaranteed to already have item_description & uom at this point
-#     (either from the backfill in Step 6, or because the table is brand new).
 # -----------------------------------------------------------------------------
 if not table_exists:
-    # ── Initial full load ────────────────────────────────────────────────────
     print("Performing initial full load...")
     (
         incremental_final_df.write
@@ -462,7 +511,6 @@ if not table_exists:
     print(f"✅ Initial load complete — {incremental_final_df.count():,} rows written to {TABLE_NAME}")
 
 else:
-    # ── Incremental merge ────────────────────────────────────────────────────
     incremental_final_df.createOrReplaceTempView("incremental_batch")
 
     spark.sql(f"""
@@ -479,9 +527,10 @@ else:
 # -----------------------------------------------------------------------------
 # 15. DONE
 # -----------------------------------------------------------------------------
-print(f"Run ID       : {run_id}")
-print(f"Watermark was: {last_closing_time}")
-print(f"Table        : {TABLE_NAME}")
+print(f"Run ID          : {run_id}")
+print(f"Watermark (UTC) : {last_closing_time_utc}")
+print(f"Table           : {TABLE_NAME}")
+print(f"Timezone stored : WAT (Africa/Lagos)")
 print("Incremental load completed successfully.")
 
 spark.stop()
