@@ -82,7 +82,7 @@ with DAG(
         do_xcom_push=True,
         params={
             's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
-            'app_name': 'spark-logistics-open-trip-data',
+            'app_name': 'spark-logistics-vehicle-master-data',
             'application_file_s3': 's3a://dags/scripts/logistics_vehicle_data.py',
         }
     )
