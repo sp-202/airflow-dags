@@ -71,4 +71,30 @@ with DAG(
         timeout=3600,
     )
 
-    logistics_closed_trip  >> monitor_closed_trip >> logistics_current_trip >> monitor_current_trip
+
+    # -------------------------------------------------------------------------
+    # JOB 3 — Vehicle_master scrap  (logistics_vehicle_data.py)
+    # -------------------------------------------------------------------------
+    logistics_vehicle_master = SparkKubernetesOperator(
+        task_id='extract_vehicle_master',
+        namespace='default',
+        application_file="spark_jinja_template.yaml",
+        do_xcom_push=True,
+        params={
+            's3_endpoint': 'http://minio.default.svc.cluster.local:9000',
+            'app_name': 'spark-logistics-open-trip-data',
+            'application_file_s3': 's3a://dags/scripts/logistics_vehicle_data.py',
+        }
+    )
+
+    monitor_vehicle_master = SparkKubernetesSensor(
+        task_id='monitor_vehicle_master_job',
+        namespace='default',
+        application_name="{{ task_instance.xcom_pull(task_ids='extract_vehicle_master')['metadata']['name'] }}",
+        kubernetes_conn_id='kubernetes_default',
+        attach_log=True,
+        poke_interval=20,
+        timeout=3600,
+    )
+
+    logistics_closed_trip  >> monitor_closed_trip >> logistics_current_trip >> monitor_current_trip >> logistics_vehicle_master >> monitor_vehicle_master
