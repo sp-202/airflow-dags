@@ -245,7 +245,8 @@ trips = raw_trips.select(
     F.col("Linked Trip ID").alias("linked_trip_id"),
     F.col("Lineked MRN No_").alias("linked_mrn_no"),      # note typo in source — "Lineked"
     F.col("Linked Sales Shipment No_").alias("linked_sales_shipment_no"),
-    F.col("No_").alias("no_")
+    F.col("No_").alias("no_"),
+    F.col("Holding Reason").alias("holding_reason")
 )
 
 # -----------------------------------------------------------------------------
@@ -452,10 +453,11 @@ final_df = trips.select([
     "way_bill_no", "heavy_equipment_code",
     "linked_trip_id", "linked_mrn_no",
     "linked_sales_shipment_no",
-    "no_",
+    "no_", "holding_reason",
 
     # --- Audit ---
     "last_data_processed_timestamp",
+    
 ])
 
 # -----------------------------------------------------------------------------
