@@ -2,6 +2,7 @@ import os
 import datetime
 import uuid
 from pyspark.sql import SparkSession
+from pyspark.sql import functions as F
 from pyspark.sql.functions import col, broadcast, when, abs as spark_abs
 
 # --- 1. SAFE CREDENTIAL LOADING ---
@@ -42,6 +43,19 @@ unique_app_name = f"nav-raw-data-{run_id}"
 spark = SparkSession.builder \
     .appName(unique_app_name) \
     .getOrCreate()
+
+# SQL Server stores timestamps in UTC, but business operates in WAT (UTC+1).
+# Delta will store WAT, consistent with the logistics TAT pipeline.
+WAT_TZ = "Africa/Lagos"
+spark.conf.set("spark.sql.session.timeZone", WAT_TZ)
+
+# Date/time columns coming out of the ledger query that need UTC -> WAT conversion.
+# (These are the OUTPUT/aliased column names, i.e. post-SELECT.)
+TIMESTAMP_COLS = [
+    "posting_date",
+    "document_date",
+    "expiration_date",
+]
 
 # Debug: Print the keys found (NEVER print the password)
 print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
@@ -98,6 +112,18 @@ incremental_ledger_query = f"""
 ) t
 """
 ledger_updates_df = spark.read.jdbc(url=jdbc_url, table=incremental_ledger_query, properties=jdbc_props)
+
+# 2b. CONVERT TIMESTAMPS UTC -> WAT
+# SQL Server stores these in UTC; business operates in WAT (UTC+1, Africa/Lagos).
+# Converting here so Delta stores WAT, consistent with the logistics TAT pipeline.
+print("Converting timestamps UTC -> WAT (Africa/Lagos)...")
+for ts_col in TIMESTAMP_COLS:
+    if ts_col in ledger_updates_df.columns:
+        ledger_updates_df = ledger_updates_df.withColumn(
+            ts_col,
+            F.from_utc_timestamp(F.col(ts_col).cast("timestamp"), WAT_TZ)
+        )
+print("✅ Timestamp conversion complete.")
 
 # 3. Fetch Dimension Data (Item)
 # We need this to get the 'uom' and 'item_description' columns
@@ -168,5 +194,6 @@ if incremental_final_df.count() > 0:
 else:
     print("No new records found in MSSQL.")
 
+print(f"Timezone stored : WAT (Africa/Lagos)")
 print("Incremental load completed successfully.")
 spark.stop()
