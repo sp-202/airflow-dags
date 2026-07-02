@@ -47,7 +47,7 @@ spark = SparkSession.builder \
 # SQL Server stores timestamps in UTC, but business operates in WAT (UTC+1).
 # Delta will store WAT, consistent with the logistics TAT pipeline.
 WAT_TZ = "Africa/Lagos"
-spark.conf.set("spark.sql.session.timeZone", WAT_TZ)
+# spark.conf.set("spark.sql.session.timeZone", WAT_TZ)
 
 # Date/time columns coming out of the ledger query that need UTC -> WAT conversion.
 # (These are the OUTPUT/aliased column names, i.e. post-SELECT.)
