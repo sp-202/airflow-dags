@@ -47,10 +47,18 @@ spark = SparkSession.builder \
 # SQL Server stores timestamps in UTC, but business operates in WAT (UTC+1).
 # Delta will store WAT, consistent with the logistics TAT pipeline.
 WAT_TZ = "Africa/Lagos"
-# spark.conf.set("spark.sql.session.timeZone", WAT_TZ)
+spark.conf.set("spark.sql.session.timeZone", WAT_TZ)
 
-# Date/time columns coming out of the ledger query that need UTC -> WAT conversion.
-# (These are the OUTPUT/aliased column names, i.e. post-SELECT.)
+# Date/time columns that MAY need UTC -> WAT conversion.
+# NOTE: In NAV/BC, posting_date / document_date / expiration_date are usually
+# plain "Date" fields (always 00:00:00, no real time-of-day). Shifting a bare
+# midnight value across the UTC/WAT boundary can flip it into the wrong
+# calendar day (e.g. 2026-07-02 00:00:00 -> 2026-07-01 23:00:00), which is
+# the bug we hit. Rather than hard-removing the conversion, we check the
+# ACTUAL data on every run (see step 2b below) and only convert a column if
+# it genuinely carries non-midnight time values that run. If the source
+# table ever starts populating real times on these fields, the conversion
+# turns itself back on automatically with no code change needed.
 TIMESTAMP_COLS = [
     "posting_date",
     "document_date",
@@ -141,17 +149,38 @@ incremental_ledger_query = f"""
 """
 ledger_updates_df = spark.read.jdbc(url=jdbc_url, table=incremental_ledger_query, properties=jdbc_props)
 
-# 2b. CONVERT TIMESTAMPS UTC -> WAT
+# 2b. CONVERT TIMESTAMPS UTC -> WAT (self-checking, per column, per run)
 # SQL Server stores these in UTC; business operates in WAT (UTC+1, Africa/Lagos).
-# Converting here so Delta stores WAT, consistent with the logistics TAT pipeline.
-print("Converting timestamps UTC -> WAT (Africa/Lagos)...")
+# We only shift a column if it actually carries a non-midnight time component
+# THIS run — a date-only field (all 00:00:00) is left untouched, since shifting
+# it can flip the calendar date across the UTC/WAT boundary. This is checked
+# fresh every run so it self-corrects if the source data ever changes.
+print("Checking timestamp columns for real time-of-day values before converting...")
 for ts_col in TIMESTAMP_COLS:
-    if ts_col in ledger_updates_df.columns:
+    if ts_col not in ledger_updates_df.columns:
+        continue
+
+    has_real_time = (
+        ledger_updates_df
+        .filter(
+            (F.hour(F.col(ts_col)) != 0)
+            | (F.minute(F.col(ts_col)) != 0)
+            | (F.second(F.col(ts_col)) != 0)
+        )
+        .limit(1)
+        .count()
+        > 0
+    )
+
+    if has_real_time:
         ledger_updates_df = ledger_updates_df.withColumn(
             ts_col,
             F.from_utc_timestamp(F.col(ts_col).cast("timestamp"), WAT_TZ)
         )
-print("✅ Timestamp conversion complete.")
+        print(f"  '{ts_col}': non-midnight time values found -> converted UTC -> WAT.")
+    else:
+        print(f"  '{ts_col}': all values are midnight (date-only field) -> skipped conversion, left as-is.")
+print("✅ Timestamp conversion check complete.")
 
 # 3. Fetch Dimension Data (Item)
 # We need this to get the 'uom' and 'item_description' columns
