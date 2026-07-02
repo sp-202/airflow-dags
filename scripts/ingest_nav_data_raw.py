@@ -63,11 +63,39 @@ print(f"Connecting to {db_host} as user: {db_user} on database: {db_name}")
 s3_delta_path = "s3a://nav-data/bronze/raw_nav_data"
 table_name = "nav_raw_data.raw_data"
 
-# 1. Get the Watermark
+# --- SCHEMA + TABLE-EXISTENCE CHECK ---
+# Data was deleted from S3, so this run needs to safely rebuild from scratch.
+# MERGE INTO a table that doesn't exist will error, so we branch on table_exists
+# below and do a full overwrite load instead of a merge on the first run.
+spark.sql("CREATE SCHEMA IF NOT EXISTS nav_raw_data")
+
+table_exists = False
 try:
-    last_entry_no = spark.sql(f"SELECT MAX(entry_no) FROM {table_name}").collect()[0][0] or 0
-except Exception:
+    # spark.read.table() is LAZY — it will happily return a DataFrame even for
+    # a stale metastore entry pointing at an empty/deleted Delta directory.
+    # Force an action (.take(1)) so DELTA_TABLE_NOT_FOUND / empty-log errors
+    # surface HERE instead of later inside the MERGE statement.
+    spark.read.table(table_name).take(1)
+    table_exists = True
+    print(f"✅ Target table {table_name} found and readable — will run incremental MERGE.")
+except Exception as e:
+    table_exists = False
+    print(f"⚠️  Target table {table_name} not found/readable ({type(e).__name__}) — will run full initial load.")
+
+# 1. Get the Watermark
+# If the table doesn't exist (or is otherwise unreadable, e.g. dangling metadata
+# pointing at deleted S3 files), fall back to a full load from entry_no > 0.
+if table_exists:
+    try:
+        last_entry_no = spark.sql(f"SELECT MAX(entry_no) FROM {table_name}").collect()[0][0] or 0
+    except Exception as e:
+        print(f"⚠️  Could not read watermark from existing table ({e}). Defaulting to full load.")
+        last_entry_no = 0
+        table_exists = False  # treat as first load if metadata is broken
+else:
     last_entry_no = 0
+
+print(f"Watermark (last_entry_no): {last_entry_no}")
 
 # 2. Fetch Incremental Ledger Data (Fact)
 incremental_ledger_query = f"""
@@ -176,10 +204,24 @@ incremental_final_df = (
     )
 )
 
-# 5. Merge into Delta
-if incremental_final_df.count() > 0:
+# 5. Write to Delta — full overwrite on first load, MERGE on subsequent runs
+row_count = incremental_final_df.count()
+
+if row_count == 0:
+    print("No records found in MSSQL. Nothing to write.")
+elif not table_exists:
+    print(f"Performing full initial load ({row_count:,} rows)...")
+    (
+        incremental_final_df.write
+        .format("delta")
+        .mode("overwrite")
+        .option("overwriteSchema", "true")
+        .saveAsTable(table_name)
+    )
+    print(f"✅ Initial load complete — {row_count:,} rows written to {table_name}")
+else:
     incremental_final_df.createOrReplaceTempView("incremental_batch")
-    
+
     # Now 'uom' and 'item_description' exist in incremental_batch
     spark.sql(f"""
         MERGE INTO {table_name} AS target
@@ -190,9 +232,7 @@ if incremental_final_df.count() > 0:
         WHEN NOT MATCHED THEN
             INSERT *
     """)
-    print(f"Successfully merged {incremental_final_df.count()} records.")
-else:
-    print("No new records found in MSSQL.")
+    print(f"✅ Merge complete — {row_count:,} records upserted into {table_name}")
 
 print(f"Timezone stored : WAT (Africa/Lagos)")
 print("Incremental load completed successfully.")
