@@ -27,7 +27,7 @@ dri_output = (
     raw_ledger_df
     .filter(col("item_no").isin(['FGDRIGRDG1104', 'FGDRIFNDF1101', 'FGDRIGRDG1101', 'FGDRIGRDG1102']))
     .filter(col("entry_type_desc").isin("Output", "Sale"))
-    .withColumn("quantity_mt", spark_abs(col("quantity")) / 1000)
+    .withColumn("quantity_mt", (col("quantity")) / 1000)
     .withColumn(
         "product_name",
         when(
