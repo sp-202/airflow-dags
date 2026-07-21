@@ -102,7 +102,10 @@ required_columns = [
     "department_process_center", "department_name", "Name", "Search Name", "Address"
 ]
 
-dri_sales_data_df = final_spark_df.select(required_columns)
+dri_sales_data_df = final_spark_df.select(required_columns) \
+    .withColumnRenamed("Search Name", "search_name") \
+    .withColumnRenamed("Name", "name") \
+    .withColumnRenamed("Address", "address")
 
 target_s3_path = "s3a://dri-sales-data/bronze/dri_sales"
 target_table = "dri_db.dri_sales_db"
