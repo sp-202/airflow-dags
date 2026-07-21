@@ -60,25 +60,15 @@ nav_table = "dri_db.dri_prod"
 raw_sales_data = spark.sql(f"SELECT * from {nav_table}") \
                       .filter((F.col("department_name") == "DRI") & (F.col("entry_type_desc") == "Sale"))
 
-sales_data_wat = raw_sales_data \
-    .withColumn("posting_date", F.col("posting_date").cast("timestamp")) \
-    .withColumn("document_date", F.col("document_date").cast("timestamp"))
-
-# Safe filtering for June 2026 using the corrected timezone columns
-# sales_data_wat = sales_data_wat.filter(
-#     (F.year(F.col("posting_date")) == 2026) & 
-#     (F.month(F.col("posting_date")) == 6)
-# )
-
 # Filter for specific item numbers
 allowed_items = ['FGDRIGRDG1104', 'FGDRIFNDF1101', 'FGDRIGRDG1101', 'FGDRIGRDG1102']
-sales_data_wat = sales_data_wat.filter(F.col("item_no").isin(allowed_items))
+raw_sales_data = raw_sales_data.filter(F.col("item_no").isin(allowed_items))
 
 
 # Join tables
-joined_data = sales_data_wat.join(
+joined_data = raw_sales_data.join(
     customer_df,
-    sales_data_wat["source_no"] == customer_df["No_"],
+    raw_sales_data["source_no"] == customer_df["No_"],
     "inner"
 )
 
