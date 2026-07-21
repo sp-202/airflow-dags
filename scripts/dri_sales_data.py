@@ -54,8 +54,8 @@ customer_df = spark.read.jdbc(
 )
 # customer_df.show()
 
-# nav table
-nav_table = "nav_raw_data.raw_data"
+# dri_prod table (pre-filtered to DRI items; built by ingest_dri_data.py)
+nav_table = "dri_db.dri_prod"
 
 raw_sales_data = spark.sql(f"SELECT * from {nav_table}") \
                       .filter((F.col("department_name") == "DRI") & (F.col("entry_type_desc") == "Sale"))
@@ -74,16 +74,11 @@ sales_data_wat = raw_sales_data \
 allowed_items = ['FGDRIGRDG1104', 'FGDRIFNDF1101', 'FGDRIGRDG1101', 'FGDRIGRDG1102']
 sales_data_wat = sales_data_wat.filter(F.col("item_no").isin(allowed_items))
 
-# Format date safely for final reporting display
-sales_display = sales_data_wat.withColumn(
-    "posting_date", 
-    F.date_format(F.col("posting_date"), "dd/MM/yyyy")
-)
 
 # Join tables
-joined_data = sales_display.join(
-    customer_df, 
-    sales_display["source_no"] == customer_df["No_"], 
+joined_data = sales_data_wat.join(
+    customer_df,
+    sales_data_wat["source_no"] == customer_df["No_"],
     "inner"
 )
 
