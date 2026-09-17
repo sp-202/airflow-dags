@@ -143,7 +143,7 @@ incremental_ledger_query = f"""
         ile.[Requisition Batch Name]   AS requisition_batch_name,
         ile.[Part Number]              AS part_number,
         ile.[Biometric Id]             AS biometric_id,
-        prh.[Order No_]                AS order_no
+        prh.[Order No_]                AS purchase_order_no
     FROM [dbo].[ANRML$Item Ledger Entry] ile
     LEFT JOIN [dbo].[ANRML$Purch_ Rcpt_ Header] prh
         ON prh.[No_] = ile.[Document No_]
