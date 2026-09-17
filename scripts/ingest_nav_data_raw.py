@@ -142,7 +142,7 @@ incremental_ledger_query = f"""
         [Item Type]                AS item_type,
         [Requisition Batch Name]   AS requisition_batch_name,
         [Part Number]              AS part_number,
-        [Biometric Id]             AS biometric_id
+        [Biometric Id]             AS biometric_id,
         [Order No_]                AS order_no
     FROM [dbo].[ANRML$Item Ledger Entry]
     WHERE [Entry No_] > {last_entry_no}
