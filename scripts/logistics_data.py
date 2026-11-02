@@ -243,6 +243,9 @@ incremental_trips_query = f"""
     FROM [dbo].[ANRML$RGP_NRGP Header]
     WHERE [Trip Close] = 1
       AND [Type]       = 1
+      AND [Logistic Operation] = 1
+      AND [Trip Clossing Type] = 0
+      AND [Final Clossing Approval] = 1
       AND [Trip Closing Time] > CONVERT(DATETIME, '{last_closing_time_utc}', 120)
 ) t
 """
