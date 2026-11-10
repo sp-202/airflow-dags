@@ -11,8 +11,6 @@ spec:
   sparkConfigMap: "spark-production-defaults"
   sparkConf:
     "spark.hadoop.fs.s3a.endpoint": "http://minio.default.svc.cluster.local:9000"
-    "spark.hadoop.fs.s3a.access.key": "minioadmin"
-    "spark.hadoop.fs.s3a.secret.key": "minioadmin"
     "spark.hadoop.fs.s3a.impl": "org.apache.hadoop.fs.s3a.S3AFileSystem"
     "spark.hadoop.fs.s3a.path.style.access": "true"
     "spark.hadoop.fs.s3a.connection.ssl.enabled": "false"
@@ -28,9 +26,15 @@ spec:
     serviceAccount: "spark-operator-spark"
     env:
       - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
+        valueFrom:
+          secretKeyRef:
+            name: minio-app-creds
+            key: AWS_ACCESS_KEY_ID
       - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
+        valueFrom:
+          secretKeyRef:
+            name: minio-app-creds
+            key: AWS_SECRET_ACCESS_KEY
     labels:
       version: "4.0.1"
 
@@ -40,8 +44,14 @@ spec:
     memory: "4096m"
     env:
       - name: AWS_ACCESS_KEY_ID
-        value: "minioadmin"
+        valueFrom:
+          secretKeyRef:
+            name: minio-app-creds
+            key: AWS_ACCESS_KEY_ID
       - name: AWS_SECRET_ACCESS_KEY
-        value: "minioadmin"
+        valueFrom:
+          secretKeyRef:
+            name: minio-app-creds
+            key: AWS_SECRET_ACCESS_KEY
     labels:
       version: "4.0.1"

@@ -20,8 +20,6 @@ spec:
 
   sparkConf:
     spark.hadoop.fs.s3a.endpoint: http://minio.default.svc.cluster.local:9000
-    spark.hadoop.fs.s3a.access.key: minioadmin
-    spark.hadoop.fs.s3a.secret.key: minioadmin
     spark.hadoop.fs.s3a.mkdir.enabled: "true"
     spark.hadoop.fs.s3a.path.style.access: "true"
     spark.hadoop.fs.s3a.connection.ssl.enabled: "false"
@@ -65,6 +63,8 @@ spec:
     envFrom:
       - secretRef:
           name: mssql-db-credentials
+      - secretRef:
+          name: minio-app-creds  # MinIO app user; Spark copies AWS_* env into fs.s3a.*
           
     env:
       - name: HADOOP_CONF_DIR
@@ -85,6 +85,8 @@ spec:
     envFrom:
       - secretRef:
           name: mssql-db-credentials
+      - secretRef:
+          name: minio-app-creds  # MinIO app user; Spark copies AWS_* env into fs.s3a.*
     env:
       - name: HADOOP_CONF_DIR
         value: /etc/spark/conf
