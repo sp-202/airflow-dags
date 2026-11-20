@@ -12,9 +12,10 @@ default_args = {
 
 # dag_id suffix -> cron (evaluated in IST because start_date is tz-aware)
 SCHEDULES = {
-    'a': '0 9,14,18 * * *',   # 09:00, 14:00, 18:00
-    'b': '45 16 * * *',       # 16:45
+    'a': '0 9,14,18 * * *',   # 09:00, 14:00, 18:00 IST
+    'b': '45 16 * * *',       # 16:45 IST
 }
+
 
 def trigger(task_id, dag_id):
     return TriggerDagRunOperator(
@@ -24,6 +25,7 @@ def trigger(task_id, dag_id):
         poke_interval=10,
         reset_dag_run=True,
     )
+
 
 for suffix, cron in SCHEDULES.items():
     dag_id = f'master_orchestrator_pipeline_v1_{suffix}'
@@ -41,10 +43,10 @@ for suffix, cron in SCHEDULES.items():
         trigger_nav_raw = trigger('trigger_nav_raw', 'spark-nav-raw-incremental-v1')
         trigger_dri = trigger('trigger_dri_ingestion', 'spark-dri-ingetsion-watch-v1')
         trigger_manual_nav_data = trigger('trigger_nav_manual_ingest', 'spark-manual-nav-data-v1')
-        trigger_dri_sales_customer_wise = trigger(
-            'spark-dri-sales-customer-wise', 'extract_dri_sales_customer_wise'
+        trigger_dri_sales_customer_wise_ingestion = trigger(
+            'trigger_dri_sales_customer_wise', 'spark-dri-sales-customer-wise'
         )
 
-        trigger_nav_raw >> trigger_dri >> [trigger_manual_nav_data, trigger_dri_sales_customer_wise]
+        trigger_nav_raw >> trigger_dri >> [trigger_manual_nav_data, trigger_dri_sales_customer_wise_ingestion]
 
-    globals()[dag_id] = dag  # make sure the scheduler discovers each DAG
+    globals()[dag_id] = dag

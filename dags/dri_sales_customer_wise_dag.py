@@ -1,14 +1,15 @@
 from airflow import DAG
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
 from airflow.providers.cncf.kubernetes.sensors.spark_kubernetes import SparkKubernetesSensor
-from airflow.operators.bash import BashOperator # FIXED: Added this import
-from airflow.utils.dates import days_ago
+import pendulum
 import os
+
+local_tz = pendulum.timezone("Asia/Kolkata")
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': pendulum.datetime(2024, 1, 1, tz=local_tz),
 }
 
 with DAG(
@@ -16,9 +17,9 @@ with DAG(
     is_paused_upon_creation=False,
     default_args=default_args,
     description='Load DRI sales data customer-wise',
-    schedule_interval=None,
+    schedule=None,
     catchup=False,
-    max_active_runs=5, # <--- ADDED THIS
+    max_active_runs=5,
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:
 
@@ -46,5 +47,4 @@ with DAG(
         timeout=3600
     )
 
-    # Set the execution order
-    submit_job >> monitor_job 
+    submit_job >> monitor_job
