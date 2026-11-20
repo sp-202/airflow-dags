@@ -17,8 +17,8 @@ with DAG(
     default_args=default_args,
     description='Triggers Raw Ingestion and DRI Processing at 9, 13, and 17 IST',
     # 2. Use 'schedule' instead of 'schedule_interval' 
-    # 3. Use the actual IST hours: 9, 14, and 18
-    schedule='0 9,14,18 * * *', 
+    # description='Triggers Raw Ingestion and DRI Processing at 9:00, 14:00, 16:45, and 18:00 IST',
+    schedule=['0 9,14,18 * * *', '45 16 * * *'],
     max_active_runs=5,
     catchup=False
 ) as dag:
