@@ -42,7 +42,7 @@ for suffix, cron in SCHEDULES.items():
         trigger_dri = trigger('trigger_dri_ingestion', 'spark-dri-ingetsion-watch-v1')
         trigger_manual_nav_data = trigger('trigger_nav_manual_ingest', 'spark-manual-nav-data-v1')
         trigger_dri_sales_customer_wise = trigger(
-            'trigger_nav_dri_sales_customer_wise', 'extract_dri_sales_customer_wise'
+            'spark-dri-sales-customer-wise', 'extract_dri_sales_customer_wise'
         )
 
         trigger_nav_raw >> trigger_dri >> [trigger_manual_nav_data, trigger_dri_sales_customer_wise]
