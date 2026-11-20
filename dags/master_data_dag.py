@@ -47,4 +47,16 @@ with DAG(
         reset_dag_run=True,
     )
 
-    trigger_nav_raw >> trigger_dri >> trigger_manual_nav_data
+    trigger_dri_sales_customer_wise = TriggerDagRunOperator(
+        task_id='trigger_nav_dri_sales_customer_wise',
+        trigger_dag_id='extract_dri_sales_customer_wise',
+        wait_for_completion=True,
+        poke_interval=10,
+        reset_dag_run=True,
+    )
+
+    (
+        trigger_nav_raw
+        >> trigger_dri
+        >> [trigger_manual_nav_data, trigger_dri_sales_customer_wise]
+    )   
