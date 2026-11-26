@@ -1,13 +1,13 @@
-from airflow import DAG
+from airflow.sdk import DAG
 from airflow.providers.cncf.kubernetes.operators.spark_kubernetes import SparkKubernetesOperator
-from airflow.utils.dates import days_ago
 import os
+import pendulum
 import yaml
 
 default_args = {
     'owner': 'airflow',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': pendulum.datetime(2024, 1, 1, tz="UTC"),
     'email_on_failure': False,
     'email_on_retry': False,
 }
@@ -16,7 +16,7 @@ with DAG(
     'spark-dri-ingetsion-v2',
     default_args=default_args,
     description='Data extract from MS-SQL database',
-    schedule_interval=None,
+    schedule=None,
     catchup=False,
     template_searchpath=[os.path.dirname(__file__)],
 ) as dag:

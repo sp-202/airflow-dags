@@ -1,5 +1,5 @@
-from airflow import DAG
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.sdk import DAG
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 import pendulum
 
 local_tz = pendulum.timezone("Asia/Kolkata")
@@ -16,7 +16,6 @@ SCHEDULES = {
     'b': '45 16 * * *',       # 16:45 IST
 }
 
-
 def trigger(task_id, dag_id):
     return TriggerDagRunOperator(
         task_id=task_id,
@@ -25,7 +24,6 @@ def trigger(task_id, dag_id):
         poke_interval=10,
         reset_dag_run=True,
     )
-
 
 for suffix, cron in SCHEDULES.items():
     dag_id = f'master_orchestrator_pipeline_v1_{suffix}'
