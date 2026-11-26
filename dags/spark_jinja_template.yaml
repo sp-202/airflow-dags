@@ -37,7 +37,7 @@ spec:
     spark.log.structured.enabled: "false" 
     # 3. Naming: Ensure the log file matches your Airflow task name
     # This prevents the "eventlog_v2_hash" naming style
-    spark.app.name: "{{ params.app_name }}-{{ (logical_date or dag_run.run_after).strftime('%Y%m%dt%H%M%S') }}"
+    spark.app.name: "{{ params.app_name }}-{{ dag_run.run_after.strftime('%Y%m%dt%H%M%S') }}"
     # 4. S3A Performance for Logging
     spark.hadoop.fs.s3a.buffer.dir: "/tmp"
     spark.hadoop.fs.s3a.fast.upload: "true"
