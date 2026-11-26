@@ -7,9 +7,8 @@ metadata:
     sparkoperator.k8s.io/enabled: "true"
 
 spec:
-  successRunHistoryLimit: 1 
-  failureRunHistoryLimit: 1
-  secondsAfterFinished: 60
+  # Operator deletes the SparkApplication (and its driver/executor pods) this long after it finishes
+  timeToLiveSeconds: 3600
   type: Python
   mode: cluster
   image: subhodeep2022/spark-bigdata:spark-4.0.1-uc-0.3.1-proper-way-v7-compatible-jars
